@@ -56,39 +56,69 @@ export function apiCallLoggingMiddleware(
     const user = (req as Request & { user?: User }).user;
 
     const body = req.body as Record<string, unknown> | undefined;
-    let orderId: string | null =
-      typeof body?.order_id === "string" ? body.order_id : null;
+    const processingTime = Date.now() - startTime;
 
-    // Fallback: extract reference_id from response body if order_id not in request
-    if (!orderId && responseBody) {
-      try {
-        const respJson = JSON.parse(responseBody);
-        if (typeof respJson === "object" && respJson !== null) {
-          const refId =
-            (respJson as Record<string,unknown>).reference_id;
-          if (typeof refId === "string") orderId = refId;
-        }
-      } catch { /* ignore parse errors */ }
+    // Batch request: insert one log per item for per-item billing
+    const isArray = Array.isArray(req.body);
+    if (isArray) {
+      const items = (req.body as any[]) || [];
+      const logItems = items.slice(0, 100);
+      for (const item of logItems) {
+        const itemOrderId: string | null =
+          typeof item?.order_id === "string" ? item.order_id : null;
+        insertApiCallLog({
+          id: crypto.randomUUID(),
+          user_id: user?.id ?? null,
+          user_name: user?.name ?? null,
+          method: req.method.toUpperCase(),
+          api_path: req.originalUrl,
+          operation_type: opType,
+          status_code: res.statusCode,
+          processing_time_ms: processingTime,
+          ip_address: req.ip || req.socket.remoteAddress || "",
+          order_id: itemOrderId,
+          request_body: reqBodyStr,
+          response_body: responseBody,
+          deepseek_tokens: 0,
+          qwen_tokens: 0,
+          webhook_status: null,
+          created_at: new Date().toISOString(),
+        });
+      }
+    } else {
+      let orderId: string | null =
+        typeof body?.order_id === "string" ? body.order_id : null;
+
+      // Fallback: extract reference_id from response body
+      if (!orderId && responseBody) {
+        try {
+          const respJson = JSON.parse(responseBody);
+          if (typeof respJson === "object" && respJson !== null) {
+            const refId = (respJson as Record<string,unknown>).reference_id;
+            if (typeof refId === "string") orderId = refId;
+          }
+        } catch { /* ignore parse errors */ }
+      }
+
+      insertApiCallLog({
+        id: crypto.randomUUID(),
+        user_id: user?.id ?? null,
+        user_name: user?.name ?? null,
+        method: req.method.toUpperCase(),
+        api_path: req.originalUrl,
+        operation_type: opType,
+        status_code: res.statusCode,
+        processing_time_ms: processingTime,
+        ip_address: req.ip || req.socket.remoteAddress || "",
+        order_id: orderId,
+        request_body: reqBodyStr,
+        response_body: responseBody,
+        deepseek_tokens: 0,
+        qwen_tokens: 0,
+        webhook_status: null,
+        created_at: new Date().toISOString(),
+      });
     }
-
-    insertApiCallLog({
-      id: crypto.randomUUID(),
-      user_id: user?.id ?? null,
-      user_name: user?.name ?? null,
-      method: req.method.toUpperCase(),
-      api_path: req.originalUrl,
-      operation_type: extractOperationType(req.originalUrl),
-      status_code: res.statusCode,
-      processing_time_ms: Date.now() - startTime,
-      ip_address: req.ip || req.socket.remoteAddress || "",
-      order_id: orderId,
-      request_body: reqBodyStr,
-      response_body: responseBody,
-      deepseek_tokens: 0,
-      qwen_tokens: 0,
-      webhook_status: null,
-      created_at: new Date().toISOString(),
-    });
 
     logger.info(
       { method: req.method, path: req.originalUrl, status: res.statusCode, duration: Date.now() - startTime, user: user?.name || "anonymous" },
