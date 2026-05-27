@@ -117,10 +117,25 @@ export async function cleanseAddress(
   const finalJa = isAddressValid && room ? `${jaAddress} ${room}` : jaAddress;
   const finalEn = isAddressValid && room ? `${enAddress} ${room}` : enAddress;
 
+  // Verdict for shipment readiness
+  const verdictMap: Record<string, { level: string; message: string }> = {
+    "SUB_PREMISE":  { level: "reliable",   message: "地址精确到房间号，可用于寄递" },
+    "PREMISE":      { level: "reliable",   message: "地址精确到门牌号，可用于寄递" },
+    "STREET_ADDRESS":{level: "trusted",    message: "地址验证到街道级别，可用于寄递" },
+    "ROUTE":        { level: "review",     message: "地址需核实，仅精确到道路级别" },
+    "NEIGHBORHOOD":{ level: "review",     message: "地址需核实，仅精确到街区级别" },
+    "LOCALITY":    { level: "unreliable", message: "地址需核实，仅精确到城市级别" },
+    "OTHER":        { level: "unreliable", message: "地址无法精确匹配，需人工核实" },
+    "UNKNOWN":     { level: "unreliable", message: "地址验证失败，需人工核实" },
+  };
+  const verdict = verdictMap[validationLevel] || { level: "unreliable", message: "未知" };
+
   return {
     address: {
       is_valid: isAddressValid,
       validation_level: validationLevel,
+      verdict_level: verdict.level,
+      verdict_message: verdict.message,
       japanese_address: finalJa,
       english_address: finalEn,
     },
