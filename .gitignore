@@ -8,6 +8,7 @@ dist/
 logs/
 coverage/
 .admin_key
+.credentials.json
 
 # Ignore all data directory except essential production files
 data/*

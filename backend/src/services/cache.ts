@@ -1,5 +1,9 @@
 import Redis, { Redis as RedisClient } from "ioredis";
 import { config } from "../core/config";
+import fs from "fs";
+import path from "path";
+
+const CREDENTIALS_FILE = path.resolve(__dirname, "../../data/.credentials.json");
 
 let client: RedisClient;
 
@@ -33,6 +37,12 @@ export async function cacheSet<T>(
   key: string,
   value: T
 ): Promise<boolean> {
+  // File fallback for credentials (survives Redis downtime)
+  if (key === SETTINGS_KEY) {
+    try {
+      fs.writeFileSync(CREDENTIALS_FILE, JSON.stringify(value), "utf-8");
+    } catch { /* ignore file write errors */ }
+  }
   try {
     const c = getRedisClient();
     await c.set(key, JSON.stringify(value));
@@ -108,7 +118,15 @@ let cachedSettings: Record<string, string> | null = null;
 
 export async function getCredential(key: string): Promise<string> {
   if (!cachedSettings) {
-    cachedSettings = (await cacheGet<Record<string, string>>(SETTINGS_KEY)) || {};
+    // Try Redis first, fall back to file
+    const redisData = await cacheGet<Record<string, string>>(SETTINGS_KEY);
+    let fileData: Record<string, string> | null = null;
+    try {
+      if (fs.existsSync(CREDENTIALS_FILE)) {
+        fileData = JSON.parse(fs.readFileSync(CREDENTIALS_FILE, "utf-8"));
+      }
+    } catch { /* ignore */ }
+    cachedSettings = redisData || fileData || {};
   }
   return cachedSettings[key] || process.env[key] || "";
 }
