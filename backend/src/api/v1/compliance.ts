@@ -12,7 +12,7 @@ const complianceCheckSchema = z.object({
       hs_code: z.string().min(1),
       declared_value_jpy: z.number().positive(),
     })
-  ).min(1),
+  ).min(1).max(100),
 });
 
 router.post("/compliance/check", async (req: Request, res: Response) => {

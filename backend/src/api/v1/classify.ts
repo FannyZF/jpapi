@@ -17,6 +17,10 @@ const classifyRequestSchema = z.object({
   hs_code: z.string().optional(),
 });
 
+const batchClassifySchema = z.object({
+  items: z.array(classifyRequestSchema).min(1).max(100),
+});
+
 const pendingLLM = new Map<string, any>();
 
 function fallbackStructuredAttributes(raw: string): StructuredAttributes {
@@ -92,129 +96,141 @@ router.get("/classify/result/:id", async (req: Request, res: Response) => {
   res.json({ status: "pending" });
 });
 
+// Reusable classify logic for single + batch
+async function classifyOneProduct(
+  parsed: { raw_description: string; hs_code?: string },
+  user?: User
+): Promise<any> {
+  const { raw_description } = parsed;
+  const brandMatch = raw_description.match(/([A-Za-z0-9]+)\s*牌/);
+  const brand = brandMatch ? brandMatch[1] : null;
+  const cleanDesc = brand ? raw_description.replace(/[A-Za-z0-9]+\s*牌/g, "").trim() : raw_description;
+
+  const keywords = extractKeywords(raw_description);
+  const candidates = await suggestHsCodes(raw_description);
+  const best = candidates[0];
+  const initialAttrs = fallbackStructuredAttributes(cleanDesc);
+  const taskId = crypto.randomUUID();
+
+  const useWebhook = user?.webhook_enabled === 1 && user?.webhook_url;
+  const isAdmin = user?.permissions?.includes("admin");
+
+  const result: any = {
+    status: "success",
+    task_id: taskId,
+  };
+
+  if (isAdmin) {
+    Object.assign(result, {
+      cached: false,
+      poll_id: taskId,
+      mode: useWebhook ? "webhook" : "poll",
+      structured_attributes: initialAttrs,
+      suggested_name_cn: cleanDesc.substring(0, 40),
+      suggested_name_en: cleanDesc.substring(0, 80),
+      tokens_used: 0,
+      extracted_keywords: keywords,
+      candidates,
+      best_guess: best ? { hs_code: best.code, description_en: best.description, description_cn: best.description_cn || best.description, confidence: best.confidence, matched_keywords: best.matched_keywords || [] } : null,
+      consensus: { agreed: false, primary_model: "local", both_available: false, deepseek_top_code: null, qwen_top_code: null },
+    });
+    if (useWebhook) result.webhook_status = "pending";
+  } else {
+    const isChineseInput = /[\u4e00-\u9fff]/.test(raw_description);
+    result.suggested_name = isChineseInput ? cleanDesc.substring(0, 40) : cleanDesc.substring(0, 80);
+    if (best) {
+      result.hs_code = best.code;
+      result.description = isChineseInput ? (best.description_cn || best.description) : best.description;
+      result.confidence = best.confidence;
+    } else {
+      result.hs_code = null;
+      result.description = null;
+      result.confidence = 0;
+    }
+  }
+
+  // Async LLM
+  classifyConsensus(cleanDesc).then(async (llmResult) => {
+    const isChineseInput = /[\u4e00-\u9fff]/.test(raw_description);
+    const output: any = { task_id: taskId, status: "completed" };
+
+    if (isAdmin) {
+      Object.assign(output, {
+        structured_attributes: llmResult?.structured_attributes || null,
+        suggested_name_cn: brand ? `${brand}牌` + (llmResult?.suggested_name_cn || "") : (llmResult?.suggested_name_cn || cleanDesc),
+        suggested_name_en: brand ? brand + " " + (llmResult?.suggested_name_en || "") : (llmResult?.suggested_name_en || cleanDesc),
+        tokens_used: llmResult?.tokens_used || 0,
+        consensus: llmResult?.consensus || null,
+        candidates: llmResult?.candidates || [],
+        extracted_keywords: keywords,
+      });
+      if (llmResult?.candidates[0]) {
+        const top = llmResult.candidates[0];
+        output.hs_code = top.code;
+        output.confidence = top.confidence;
+        output.description_en = top.description;
+        output.description_cn = top.description_cn;
+      }
+    } else {
+      const top = llmResult?.candidates?.[0] || best;
+      if (top) {
+        output.hs_code = "code" in top ? (top as any).code : (top as any).hs_code;
+        output.confidence = "confidence" in top ? (top as any).confidence : (best?.confidence || 0);
+        output.description = isChineseInput
+          ? ((top as any).description_cn || (top as any).description || "")
+          : ((top as any).description_en || (top as any).description || "");
+        output.suggested_name = llmResult?.suggested_name_cn && isChineseInput
+          ? (brand ? `${brand}牌` + llmResult.suggested_name_cn : llmResult.suggested_name_cn)
+          : llmResult?.suggested_name_en
+            ? (brand ? brand + " " + llmResult.suggested_name_en : llmResult.suggested_name_en)
+            : (isChineseInput ? cleanDesc.substring(0, 40) : cleanDesc.substring(0, 80));
+      }
+    }
+
+    try {
+      const DB = require("../../services/historyStore").getHistoryDb();
+      const row = DB.prepare("SELECT id FROM api_call_logs WHERE operation_type='classify' ORDER BY created_at DESC LIMIT 1").get() as any;
+      if (row) updateApiCallTokens(row.id, llmResult?.deepseek_tokens || 0, llmResult?.qwen_tokens || 0);
+    } catch {}
+
+    if (useWebhook && user) {
+      await createTask(taskId, output);
+      await deliverWebhook(user.webhook_url!, user.webhook_secret!, taskId, output);
+    } else {
+      pendingLLM.set(taskId, output);
+    }
+  });
+
+  return result;
+}
+
+function handleClassifyError(err: unknown, res: Response): void {
+  if (err instanceof ZodError) {
+    res.status(400).json({ status: "error", message: "Validation failed", details: err.errors.map(e => ({ path: e.path.join("."), message: e.message })) });
+    return;
+  }
+  res.status(500).json({ status: "error", message: "Classification failed", details: err instanceof Error ? err.message : String(err) });
+}
+
 router.post("/classify", async (req: Request, res: Response) => {
   try {
     const parsed = classifyRequestSchema.parse(req.body);
-    const { raw_description } = parsed;
-
-    const brandMatch = raw_description.match(/([A-Za-z0-9]+)\s*牌/);
-    const brand = brandMatch ? brandMatch[1] : null;
-    const cleanDesc = brand ? raw_description.replace(/[A-Za-z0-9]+\s*牌/g, "").trim() : raw_description;
-
-    const keywords = extractKeywords(raw_description);
-    const candidates = await suggestHsCodes(raw_description);
-    const best = candidates[0];
-    const initialAttrs = fallbackStructuredAttributes(cleanDesc);
-    const taskId = crypto.randomUUID();
-
     const user = (req as any).user as User | undefined;
-    const useWebhook = user?.webhook_enabled === 1 && user?.webhook_url;
-    const isAdmin = user?.permissions?.includes("admin");
-
-    // Return immediate response
-    const immediateResp: any = {
-      status: "success",
-      task_id: taskId,
-    };
-
-    if (isAdmin) {
-      // Full response for admin frontend
-      Object.assign(immediateResp, {
-        cached: false,
-        poll_id: taskId,
-        mode: useWebhook ? "webhook" : "poll",
-        structured_attributes: initialAttrs,
-        suggested_name_cn: cleanDesc.substring(0, 40),
-        suggested_name_en: cleanDesc.substring(0, 80),
-        tokens_used: 0,
-        extracted_keywords: keywords,
-        candidates,
-        best_guess: best ? { hs_code: best.code, description_en: best.description, description_cn: best.description_cn || best.description, confidence: best.confidence, matched_keywords: best.matched_keywords || [] } : null,
-        consensus: { agreed: false, primary_model: "local", both_available: false, deepseek_top_code: null, qwen_top_code: null },
-      });
-      if (useWebhook) immediateResp.webhook_status = "pending";
-    } else {
-      // Simplified response for external API users
-      const isChineseInput = /[\u4e00-\u9fff]/.test(raw_description);
-      immediateResp.suggested_name = isChineseInput ? cleanDesc.substring(0, 40) : cleanDesc.substring(0, 80);
-      if (best) {
-        immediateResp.hs_code = best.code;
-        immediateResp.description = isChineseInput ? (best.description_cn || best.description) : best.description;
-        immediateResp.confidence = best.confidence;
-      } else {
-        immediateResp.hs_code = null;
-        immediateResp.description = null;
-        immediateResp.confidence = 0;
-      }
-    }
-    res.json(immediateResp);
-
-    // Async LLM
-    classifyConsensus(cleanDesc).then(async (llmResult) => {
-      const isChineseInput = /[\u4e00-\u9fff]/.test(raw_description);
-      const output: any = {
-        task_id: taskId,
-        status: "completed",
-      };
-
-      if (isAdmin) {
-        // Full LLM result for admin
-        Object.assign(output, {
-          structured_attributes: llmResult?.structured_attributes || null,
-          suggested_name_cn: brand ? `${brand}牌` + (llmResult?.suggested_name_cn || "") : (llmResult?.suggested_name_cn || cleanDesc),
-          suggested_name_en: brand ? brand + " " + (llmResult?.suggested_name_en || "") : (llmResult?.suggested_name_en || cleanDesc),
-          tokens_used: llmResult?.tokens_used || 0,
-          consensus: llmResult?.consensus || null,
-          candidates: llmResult?.candidates || [],
-          extracted_keywords: keywords,
-        });
-        if (llmResult?.candidates[0]) {
-          const top = llmResult.candidates[0];
-          output.hs_code = top.code;
-          output.confidence = top.confidence;
-          output.description_en = top.description;
-          output.description_cn = top.description_cn;
-        }
-      } else {
-        // Simplified LLM result for external users
-        const top = llmResult?.candidates?.[0] || best;
-        if (top) {
-          output.hs_code = "code" in top ? (top as any).code : (top as any).hs_code;
-          output.confidence = "confidence" in top ? (top as any).confidence : (best?.confidence || 0);
-          output.description = isChineseInput
-            ? ((top as any).description_cn || (top as any).description || "")
-            : ((top as any).description_en || (top as any).description || "");
-          output.suggested_name = llmResult?.suggested_name_cn && isChineseInput
-            ? (brand ? `${brand}牌` + llmResult.suggested_name_cn : llmResult.suggested_name_cn)
-            : llmResult?.suggested_name_en
-              ? (brand ? brand + " " + llmResult.suggested_name_en : llmResult.suggested_name_en)
-              : (isChineseInput ? cleanDesc.substring(0, 40) : cleanDesc.substring(0, 80));
-        }
-      }
-
-      // Store tokens
-      try {
-        const DB = require("../../services/historyStore").getHistoryDb();
-        const row = DB.prepare("SELECT id FROM api_call_logs WHERE operation_type='classify' ORDER BY created_at DESC LIMIT 1").get() as any;
-        if (row) updateApiCallTokens(row.id, llmResult?.deepseek_tokens || 0, llmResult?.qwen_tokens || 0);
-      } catch {}
-
-      if (useWebhook && user) {
-        // Store task + deliver webhook
-        await createTask(taskId, output);
-        await deliverWebhook(user.webhook_url!, user.webhook_secret!, taskId, output);
-      } else {
-        // Frontend polling mode
-        pendingLLM.set(taskId, output);
-      }
-    });
-
+    const result = await classifyOneProduct(parsed, user);
+    res.json(result);
   } catch (err) {
-    if (err instanceof ZodError) {
-      res.status(400).json({ status: "error", message: "Validation failed", details: err.errors.map(e => ({ path: e.path.join("."), message: e.message })) });
-      return;
-    }
-    res.status(500).json({ status: "error", message: "Classification failed", details: err instanceof Error ? err.message : String(err) });
+    handleClassifyError(err, res);
+  }
+});
+
+router.post("/classify/batch", async (req: Request, res: Response) => {
+  try {
+    const parsed = batchClassifySchema.parse(req.body);
+    const user = (req as any).user as User | undefined;
+    const results = await Promise.all(parsed.items.map(item => classifyOneProduct(item, user)));
+    res.json({ status: "success", results });
+  } catch (err) {
+    handleClassifyError(err, res);
   }
 });
 
