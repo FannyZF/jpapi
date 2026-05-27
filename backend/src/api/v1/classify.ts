@@ -214,6 +214,17 @@ function handleClassifyError(err: unknown, res: Response): void {
 
 router.post("/classify", async (req: Request, res: Response) => {
   try {
+    // Auto-batch if body is an array
+    if (Array.isArray(req.body)) {
+      const safeItems = req.body.slice(0, 100);
+      const user = (req as any).user as User | undefined;
+      const results = await Promise.all(safeItems.map((item: any) => {
+        const parsed = classifyRequestSchema.parse(item);
+        return classifyOneProduct(parsed, user);
+      }));
+      return res.json({ status: "success", results });
+    }
+
     const parsed = classifyRequestSchema.parse(req.body);
     const user = (req as any).user as User | undefined;
     const result = await classifyOneProduct(parsed, user);

@@ -17,7 +17,9 @@ const complianceCheckSchema = z.object({
 
 router.post("/compliance/check", async (req: Request, res: Response) => {
   try {
-    const parsed = complianceCheckSchema.parse(req.body);
+    // Auto-batch if bare array sent
+    const body = Array.isArray(req.body) ? { items: req.body } : req.body;
+    const parsed = complianceCheckSchema.parse(body);
 
     const results = await Promise.all(parsed.items.map(async (item) => ({
       raw_description: item.raw_description,

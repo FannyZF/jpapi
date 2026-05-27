@@ -14,6 +14,23 @@ const batchAddressSchema = z.object({
 });
 
 router.post("/address", async (req: Request, res: Response) => {
+  // Auto-batch if body is an array
+  if (Array.isArray(req.body)) {
+    try {
+      const safeItems = req.body.slice(0, 100);
+      const results = await Promise.all(safeItems.map(async (item: any) => {
+        const parsed = addressCleanseRequestSchema.parse(item);
+        const referenceId = parsed.order_id || generateReferenceId();
+        const result = await cleanseAddress(referenceId, parsed.raw_address, parsed.provided_zipcode);
+        return { reference_id: referenceId, data: { address: result.address, zipcode: result.zipcode } };
+      }));
+      return res.json({ status: "success", results });
+    } catch (err) {
+      return handleError(err, res, "Address");
+    }
+  }
+
+  // Single item
   const startTime = Date.now();
   try {
     const parsed = addressCleanseRequestSchema.parse(req.body);

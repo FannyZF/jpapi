@@ -14,6 +14,22 @@ const batchItemSchema = z.object({
 });
 
 router.post("/item", async (req: Request, res: Response) => {
+  if (Array.isArray(req.body)) {
+    try {
+      const safeItems = req.body.slice(0, 100);
+      const results = await Promise.all(safeItems.map(async (item: any) => {
+        const parsed = itemCleanseRequestSchema.parse(item);
+        const referenceId = parsed.order_id || generateReferenceId();
+        const result = await cleanseItem(referenceId, parsed.raw_description, parsed.hs_code, parsed.declared_value_jpy);
+        return { reference_id: referenceId, data: { item: result.item, compliance: result.compliance } };
+      }));
+      return res.json({ status: "success", results });
+    } catch (err) {
+      return handleError(err, res, "Item");
+    }
+  }
+
+  // Single
   const startTime = Date.now();
   try {
     const parsed = itemCleanseRequestSchema.parse(req.body);
