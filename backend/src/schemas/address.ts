@@ -12,6 +12,8 @@ export const addressCleanseRequestSchema = z.object({
 export const addressResultSchema = z.object({
   is_valid: z.boolean(),
   validation_level: z.string(),
+  verdict_level: z.string(),
+  verdict_message: z.string(),
   japanese_address: z.string(),
   english_address: z.string(),
 });

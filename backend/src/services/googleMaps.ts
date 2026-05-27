@@ -134,6 +134,8 @@ export async function fetchGoogleMaps(
       address: {
         is_valid: !isBelowRoute,
         validation_level: validationLevel,
+        verdict_level: "",
+        verdict_message: "",
         japanese_address: jaResult?.formattedAddress || rawAddress,
         english_address: enResult?.formattedAddress || rawAddress,
       },
