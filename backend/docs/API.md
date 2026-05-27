@@ -51,135 +51,66 @@ POST /api/v1/classify
 | `raw_description` | string | 是 | 产品描述文本，支持中英文，建议包含品牌、材质、功能等关键信息。例如：`SHEIN牌女士纯棉上衣` |
 | `hs_code` | string | 否 | 待验证的 HS 编码。提供后系统会判断该编码是否与描述匹配（验证模式） |
 
-### 响应参数（立即返回）
+### 响应参数（外部 API 用户）
 
-系统立即返回本地关键词匹配结果，同时后台异步调用 AI 模型优化结果。
+系统根据输入语言自动判断返回中文或英文结果。立即返回本地匹配结果，后台 AI 模型异步优化。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `status` | string | `"success"` |
 | `task_id` | string | 本次分类任务唯一标识 |
-| `poll_id` | string | 轮询 ID，用于获取 AI 优化后的结果 |
-| `mode` | string | `"poll"` (轮询模式) 或 `"webhook"` (Webhook 推送模式) |
-| `extracted_keywords` | array[string] | 从描述中提取的关键词列表 |
-| `suggested_name_cn` | string | 建议的中文品名 |
-| `suggested_name_en` | string | 建议的英文品名 |
-| `structured_attributes` | object | 7 维度产品属性结构化分析（见下表） |
-| `candidates` | array | 候选 HS 编码列表（按置信度降序，最多 10 条） |
-| `best_guess` | object\|null | 最佳匹配 HS 编码 |
-| `consensus` | object | AI 双模型共识状态 |
-
-### structured_attributes 字段
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `core_product_cn` | string\|null | 核心产品类型（中文） |
-| `core_product_en` | string\|null | 核心产品类型（英文） |
-| `material_cn` | string\|null | 材质（中文） |
-| `material_en` | string\|null | 材质（英文） |
-| `function_cn` | string\|null | 功能用途（中文） |
-| `function_en` | string\|null | 功能用途（英文） |
-| `composition_cn` | string\|null | 成分（中文） |
-| `composition_en` | string\|null | 成分（英文） |
-| `processing_cn` | string\|null | 加工方式（中文） |
-| `processing_en` | string\|null | 加工方式（英文） |
-| `structure_cn` | string\|null | 结构形态（中文） |
-| `structure_en` | string\|null | 结构形态（英文） |
-| `technical_cn` | string\|null | 技术特征（中文） |
-| `technical_en` | string\|null | 技术特征（英文） |
-
-### best_guess 字段
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `hs_code` | string | HS 编码，如 `61091000` |
-| `description_en` | string | HS 编码英文描述 |
-| `description_cn` | string | HS 编码中文描述 |
-| `confidence` | number | 置信度，0~1，越高越可靠 |
-| `matched_keywords` | array[string] | 匹配到的关键词 |
-
-### candidates 数组元素
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `code` | string | HS 编码 |
-| `description` | string | HS 编码英文描述 |
-| `description_cn` | string | HS 编码中文描述 |
-| `confidence` | number | 置信度，0~1 |
-| `matched_keywords` | array[string] | 匹配到的关键词 |
-
-### consensus 字段
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `agreed` | boolean | AI 模型是否达成共识 |
-| `primary_model` | string | 主要参考模型：`"local"` / `"deepseek"` / `"qwen"` / `"dual"` |
-| `both_available` | boolean | 两个 AI 模型是否均可用 |
-| `deepseek_top_code` | string\|null | DeepSeek 模型推荐的首选编码 |
-| `qwen_top_code` | string\|null | QWen 模型推荐的首选编码 |
-
-### 轮询 AI 优化结果
-
-```
-GET /api/v1/classify/result/:poll_id
-```
-
-| 响应 status | 说明 |
-|-------------|------|
-| `"pending"` | AI 结果尚未就绪，请稍后重试 |
-| `"ready"` | AI 结果已就绪，返回完整的分类数据（含更精准的 structured_attributes、consensus 等） |
+| `suggested_name` | string | 建议品名（与输入语言一致） |
+| `hs_code` | string\|null | 最匹配的 HS 编码，如无匹配则为 null |
+| `description` | string\|null | HS 编码描述（与输入语言一致） |
+| `confidence` | number | 置信度 0~1，越高越可靠 |
 
 ### 示例
 
-**请求**:
+**请求（中文）**:
 ```json
 {
-  "raw_description": "SHEIN牌女士纯棉上衣",
-  "hs_code": "61061000"
+  "raw_description": "SHEIN牌女士纯棉上衣"
 }
 ```
 
-**响应**:
+**响应（中文）**:
 ```json
 {
   "status": "success",
   "task_id": "abc123",
-  "poll_id": "abc123",
-  "mode": "poll",
-  "extracted_keywords": ["上衣", "纯棉", "cotton", "textile", "shirt", "blouse"],
-  "suggested_name_cn": "女装上衣纯棉",
-  "suggested_name_en": "Women's Cotton Blouse",
-  "structured_attributes": {
-    "core_product_cn": "上衣 (Top/Blouse)",
-    "core_product_en": "Top/Blouse",
-    "material_cn": "100%棉 (100% Cotton)",
-    "material_en": "100% Cotton"
-  },
-  "candidates": [
-    {
-      "code": "61061000",
-      "description": "Women's or girls' blouses... of cotton",
-      "description_cn": "棉制针织或钩编女衬衫",
-      "confidence": 0.85,
-      "matched_keywords": ["cotton", "blouse"]
-    }
-  ],
-  "best_guess": {
-    "hs_code": "61061000",
-    "description_en": "Women's or girls' blouses... of cotton",
-    "description_cn": "棉制针织或钩编女衬衫",
-    "confidence": 0.85,
-    "matched_keywords": ["cotton", "blouse"]
-  },
-  "consensus": {
-    "agreed": false,
-    "primary_model": "local",
-    "both_available": false,
-    "deepseek_top_code": null,
-    "qwen_top_code": null
-  }
+  "suggested_name": "女装上衣纯棉",
+  "hs_code": "61061000",
+  "description": "棉制针织或钩编女衬衫",
+  "confidence": 0.85
 }
 ```
+
+**请求（英文）**:
+```json
+{
+  "raw_description": "Laptop Computer"
+}
+```
+
+**响应（英文）**:
+```json
+{
+  "status": "success",
+  "task_id": "def456",
+  "suggested_name": "Laptop Computer",
+  "hs_code": "84713000",
+  "description": "Portable automatic data processing machines, weight <= 10kg",
+  "confidence": 0.92
+}
+```
+
+---
+
+### 管理后台额外字段（仅 admin 用户可见）
+
+Admin 用户在调用时会额外获得以下字段用于管理后台展示：
+
+`structured_attributes`、`candidates`、`best_guess`、`consensus`、`extracted_keywords`、`tokens_used`、`poll_id`、`mode` 等。
 
 ---
 

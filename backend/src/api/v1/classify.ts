@@ -53,16 +53,41 @@ function fallbackStructuredAttributes(raw: string): StructuredAttributes {
 }
 
 router.get("/classify/result/:id", async (req: Request, res: Response) => {
+  const user = (req as any).user as User | undefined;
+  const isAdmin = user?.permissions?.includes("admin");
   const result = pendingLLM.get(req.params.id);
   if (result !== undefined) {
     pendingLLM.delete(req.params.id);
-    return res.json({ status: "ready", data: result });
+    if (isAdmin) {
+      return res.json({ status: "ready", data: result });
+    }
+    // Simplified for external users
+    return res.json({
+      status: "ready",
+      data: {
+        suggested_name: result.suggested_name_cn || result.suggested_name_en || "",
+        hs_code: result.hs_code || null,
+        description: result.description_cn || result.description_en || null,
+        confidence: result.confidence || 0,
+      }
+    });
   }
   // Try task manager (webhook mode)
   const { getTask } = await import("../../services/taskManager.service");
   const task = await getTask(req.params.id);
   if (task) {
-    return res.json({ status: "ready", data: task });
+    if (isAdmin) {
+      return res.json({ status: "ready", data: task });
+    }
+    return res.json({
+      status: "ready",
+      data: {
+        suggested_name: task.suggested_name_cn || task.suggested_name_en || "",
+        hs_code: task.hs_code || null,
+        description: task.description_cn || task.description_en || null,
+        confidence: task.confidence || 0,
+      }
+    });
   }
   res.json({ status: "pending" });
 });
@@ -84,47 +109,87 @@ router.post("/classify", async (req: Request, res: Response) => {
 
     const user = (req as any).user as User | undefined;
     const useWebhook = user?.webhook_enabled === 1 && user?.webhook_url;
+    const isAdmin = user?.permissions?.includes("admin");
 
     // Return immediate response
     const immediateResp: any = {
       status: "success",
       task_id: taskId,
-      cached: false,
-      poll_id: taskId,
-      mode: useWebhook ? "webhook" : "poll",
-      structured_attributes: initialAttrs,
-      suggested_name_cn: cleanDesc.substring(0, 40),
-      suggested_name_en: cleanDesc.substring(0, 80),
-      tokens_used: 0,
-      extracted_keywords: keywords,
-      candidates,
-      best_guess: best ? { hs_code: best.code, description_en: best.description, description_cn: best.description_cn || best.description, confidence: best.confidence, matched_keywords: best.matched_keywords || [] } : null,
-      consensus: { agreed: false, primary_model: "local", both_available: false, deepseek_top_code: null, qwen_top_code: null },
     };
-    if (useWebhook) {
-      immediateResp.webhook_status = "pending";
+
+    if (isAdmin) {
+      // Full response for admin frontend
+      Object.assign(immediateResp, {
+        cached: false,
+        poll_id: taskId,
+        mode: useWebhook ? "webhook" : "poll",
+        structured_attributes: initialAttrs,
+        suggested_name_cn: cleanDesc.substring(0, 40),
+        suggested_name_en: cleanDesc.substring(0, 80),
+        tokens_used: 0,
+        extracted_keywords: keywords,
+        candidates,
+        best_guess: best ? { hs_code: best.code, description_en: best.description, description_cn: best.description_cn || best.description, confidence: best.confidence, matched_keywords: best.matched_keywords || [] } : null,
+        consensus: { agreed: false, primary_model: "local", both_available: false, deepseek_top_code: null, qwen_top_code: null },
+      });
+      if (useWebhook) immediateResp.webhook_status = "pending";
+    } else {
+      // Simplified response for external API users
+      const isChineseInput = /[\u4e00-\u9fff]/.test(raw_description);
+      immediateResp.suggested_name = isChineseInput ? cleanDesc.substring(0, 40) : cleanDesc.substring(0, 80);
+      if (best) {
+        immediateResp.hs_code = best.code;
+        immediateResp.description = isChineseInput ? (best.description_cn || best.description) : best.description;
+        immediateResp.confidence = best.confidence;
+      } else {
+        immediateResp.hs_code = null;
+        immediateResp.description = null;
+        immediateResp.confidence = 0;
+      }
     }
     res.json(immediateResp);
 
     // Async LLM
     classifyConsensus(cleanDesc).then(async (llmResult) => {
+      const isChineseInput = /[\u4e00-\u9fff]/.test(raw_description);
       const output: any = {
         task_id: taskId,
         status: "completed",
-        structured_attributes: llmResult?.structured_attributes || null,
-        suggested_name_cn: brand ? `${brand}牌` + (llmResult?.suggested_name_cn || "") : (llmResult?.suggested_name_cn || cleanDesc),
-        suggested_name_en: brand ? brand + " " + (llmResult?.suggested_name_en || "") : (llmResult?.suggested_name_en || cleanDesc),
-        tokens_used: llmResult?.tokens_used || 0,
-        consensus: llmResult?.consensus || null,
-        candidates: llmResult?.candidates || [],
-        extracted_keywords: keywords,
       };
-      if (llmResult?.candidates[0]) {
-        const top = llmResult.candidates[0];
-        output.hs_code = top.code;
-        output.confidence = top.confidence;
-        output.description_en = top.description;
-        output.description_cn = top.description_cn;
+
+      if (isAdmin) {
+        // Full LLM result for admin
+        Object.assign(output, {
+          structured_attributes: llmResult?.structured_attributes || null,
+          suggested_name_cn: brand ? `${brand}牌` + (llmResult?.suggested_name_cn || "") : (llmResult?.suggested_name_cn || cleanDesc),
+          suggested_name_en: brand ? brand + " " + (llmResult?.suggested_name_en || "") : (llmResult?.suggested_name_en || cleanDesc),
+          tokens_used: llmResult?.tokens_used || 0,
+          consensus: llmResult?.consensus || null,
+          candidates: llmResult?.candidates || [],
+          extracted_keywords: keywords,
+        });
+        if (llmResult?.candidates[0]) {
+          const top = llmResult.candidates[0];
+          output.hs_code = top.code;
+          output.confidence = top.confidence;
+          output.description_en = top.description;
+          output.description_cn = top.description_cn;
+        }
+      } else {
+        // Simplified LLM result for external users
+        const top = llmResult?.candidates?.[0] || best;
+        if (top) {
+          output.hs_code = "code" in top ? (top as any).code : (top as any).hs_code;
+          output.confidence = "confidence" in top ? (top as any).confidence : (best?.confidence || 0);
+          output.description = isChineseInput
+            ? ((top as any).description_cn || (top as any).description || "")
+            : ((top as any).description_en || (top as any).description || "");
+          output.suggested_name = llmResult?.suggested_name_cn && isChineseInput
+            ? (brand ? `${brand}牌` + llmResult.suggested_name_cn : llmResult.suggested_name_cn)
+            : llmResult?.suggested_name_en
+              ? (brand ? brand + " " + llmResult.suggested_name_en : llmResult.suggested_name_en)
+              : (isChineseInput ? cleanDesc.substring(0, 40) : cleanDesc.substring(0, 80));
+        }
       }
 
       // Store tokens
