@@ -779,11 +779,13 @@ export async function suggestHsCodes(description:string):Promise<SuggestionEntry
   if(llm&&llm.candidates.length>0)return llm.candidates.map((c:any)=>({code:c.code,description:c.description,description_cn:c.description_cn||c.description,confidence:c.confidence,matched_keywords:c.matched_keywords||[]}));
   const dk=extractKeywords(description);if(!dk.length)return[];
   const db=getHistoryDb();
-  const ar=db.prepare("SELECT code,description FROM hs_codes WHERE level>=4 ORDER BY code LIMIT 2000").all() as HsCodeEntry[];
+  const ar=db.prepare("SELECT code,description FROM hs_codes WHERE level>=4 ORDER BY code").all() as HsCodeEntry[];
   const sc:{code:string;description:string;score:number}[]=[];
   for(const r of ar){const s=scoreMatch(dk,extractHsKeywords(r.description));if(s>0)sc.push({code:r.code,description:r.description,score:s});}
   sc.sort((a,b)=>b.score-a.score);
-  return sc.slice(0,5).map(s=>({code:s.code,description:s.description,description_cn:"",confidence:Math.min(s.score/Math.max(dk.length,1),1),matched_keywords:computeMatchedKeywords(dk,s.description)}));
+  const top=sc.slice(0,10);
+  const maxScore=top.length>0?top[0].score:1;
+  return top.map(s=>({code:s.code,description:s.description,description_cn:"",confidence:maxScore>0?Math.round(Math.min(s.score/Math.max(dk.length,1),1)*100)/100:0,matched_keywords:computeMatchedKeywords(dk,s.description)}));
 }
 
 export function getChapterInfo(chapter:string):{section:string;description:string}|null{
