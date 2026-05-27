@@ -95,7 +95,9 @@ const deleteTarget = ref("");
 async function loadCache() {
   try {
     const res = await fetchCache(pattern.value);
-    entries.value = res.data.entries;
+    entries.value = res.data.entries.filter(
+      (e: CacheEntry) => !e.key.startsWith("settings:credentials") && !e.key.startsWith("settings:company") && !e.key.startsWith("settings:pricing")
+    );
   } catch (e) {
     error.value = "Failed to load cache";
   }

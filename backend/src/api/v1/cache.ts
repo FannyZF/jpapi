@@ -9,7 +9,9 @@ router.get("/cache", async (req: Request, res: Response) => {
     const keys = await cacheScan(pattern, 100);
 
     const entries = [];
+    const SKIP_KEYS = ["settings:credentials", "settings:company", "settings:pricing"];
     for (const key of keys.slice(0, 50)) {
+      if (SKIP_KEYS.includes(key)) continue;
       const value = await cacheGet<unknown>(key);
       entries.push({ key, value });
     }
@@ -31,6 +33,10 @@ router.get("/cache", async (req: Request, res: Response) => {
 router.get("/cache/:key", async (req: Request, res: Response) => {
   try {
     const key = decodeURIComponent(req.params.key);
+    if (key === "settings:credentials") {
+      res.status(403).json({ status: "error", message: "Credential access denied" });
+      return;
+    }
     const value = await cacheGet<unknown>(key);
 
     if (value === null) {
@@ -51,6 +57,10 @@ router.get("/cache/:key", async (req: Request, res: Response) => {
 router.put("/cache/:key", async (req: Request, res: Response) => {
   try {
     const key = decodeURIComponent(req.params.key);
+    if (key === "settings:credentials") {
+      res.status(403).json({ status: "error", message: "Credential modification denied" });
+      return;
+    }
     const { value } = req.body;
 
     if (value === undefined) {
@@ -72,6 +82,10 @@ router.put("/cache/:key", async (req: Request, res: Response) => {
 router.delete("/cache/:key", async (req: Request, res: Response) => {
   try {
     const key = decodeURIComponent(req.params.key);
+    if (key === "settings:credentials") {
+      res.status(403).json({ status: "error", message: "Credential deletion denied" });
+      return;
+    }
     const deleted = await cacheDelete(key);
     res.json({ status: "success", key, deleted });
   } catch (err) {
