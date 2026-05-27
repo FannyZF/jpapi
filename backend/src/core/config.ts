@@ -7,7 +7,7 @@ dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 const envSchema = z.object({
   GOOGLE_MAPS_API_KEY: z.string().min(1, "GOOGLE_MAPS_API_KEY is required"),
   YAHOO_CLIENT_ID: z.string().optional(),
-  REDIS_URL: z.string().url("REDIS_URL must be a valid URL"),
+  REDIS_URL: z.string().default(""),
   SQLITE_PATH: z.string().default("./data/cleanse_history.db"),
   PORT: z.coerce.number().int().positive().default(3000),
   KUROMOJI_DICT_PATH: z.string().default("node_modules/kuromoji/dict"),

@@ -47,7 +47,7 @@ fi
 echo ""
 echo "[4/7] Backend..."
 cd "$BACKEND_DIR"
-npm install --production
+npm install
 npm run build
 
 # 5. Frontend
