@@ -10,6 +10,18 @@ if (storedKey) {
   api.defaults.headers.common["X-API-Key"] = storedKey;
 }
 
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+      localStorage.removeItem("admin_api_key");
+      delete api.defaults.headers.common["X-API-Key"];
+      window.location.href = "/login";
+    }
+    return Promise.reject(err);
+  }
+);
+
 export interface HistoryRecord {
   id: string;
   order_id: string;
