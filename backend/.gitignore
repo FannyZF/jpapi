@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+*.db
+data/*
+!data/hs_codes.csv
+!data/compliance_rules.json
+coverage/

@@ -1,0 +1,93 @@
+{
+  "description_rules": {
+    "min_length": 3,
+    "vague_terms": [
+      "parts", "goods", "items", "products", "merchandise", "stuff",
+      "etc", "misc", "others", "other", "various", "sample",
+      "gift", "present", "souvenir", "personal effects", "personal belongings",
+      "used goods", "used items", "general cargo", "consolidated cargo",
+      "accessory", "accessories", "supplies", "material", "materials",
+      "component", "components", "assembly", "kit", "set",
+      "unit", "device", "apparatus", "instrument", "equipment",
+      "tool", "tools", "machine", "machinery"
+    ]
+  },
+  "restricted_keywords": {
+    "dangerous_goods": {
+      "level": "blocked",
+      "category": "航空危险品",
+      "source": "Japan Post / IATA DGR",
+      "keywords": [
+        "explosive", "firework", "firecracker", "ammunition", "gunpowder",
+        "dynamite", "detonator", "blasting cap", "fuse",
+        "flammable", "gasoline", "lighter fuel", "paint thinner",
+        "acetone", "ethanol", "methanol", "solvent",
+        "compressed gas", "propane", "butane", "helium tank",
+        "oxygen cylinder", "aerosol", "fire extinguisher",
+        "oxidizer", "bleach", "peroxide", "chlorine", "nitrate",
+        "toxic", "poison", "chloroform", "pesticide", "insecticide",
+        "herbicide", "cyanide", "arsenic", "mercury",
+        "corrosive", "sulfuric acid", "hydrochloric acid", "battery acid",
+        "radioactive", "uranium", "plutonium", "radium", "cesium",
+        "infectious", "biohazard", "pathogen", "virus culture"
+      ]
+    },
+    "illegal_items": {
+      "level": "blocked",
+      "category": "法律禁止品",
+      "source": "Japan Customs / Postal Law",
+      "keywords": [
+        "narcotic", "opium", "cocaine", "heroin", "cannabis",
+        "marijuana", "methamphetamine", "psychotropic", "morphine",
+        "pornographic", "obscene", "adult content",
+        "weapon", "firearm", "rifle", "pistol", "revolver",
+        "switchblade", "butterfly knife", "brass knuckles",
+        "counterfeit", "fake brand", "replica watch", "imitation",
+        "endangered", "CITES", "ivory", "tortoiseshell", "coral",
+        "stolen", "smuggled", "contraband"
+      ]
+    },
+    "restricted_items": {
+      "level": "restricted",
+      "category": "特殊管制品",
+      "source": "Japan Customs / Trade Guidelines",
+      "keywords": [
+        "lithium battery", "li-ion", "LiPo", "power bank",
+        "portable charger", "battery pack",
+        "electronic cigarette", "vape", "e-liquid", "nicotine",
+        "alcohol", "liquor", "wine", "sake", "beer", "spirits",
+        "medicine", "pharmaceutical", "prescription drug",
+        "counterfeit", "fake brand", "replica watch",
+        "endangered", "CITES", "ivory", "tortoiseshell", "coral",
+        "gold bar", "silver coin", "platinum", "diamond",
+        "precious metal", "jewelry", "gemstone",
+        "currency", "cash", "banknote", "coin", "traveler check",
+        "weapon", "firearm", "rifle", "pistol", "revolver",
+        "narcotic", "opium", "cocaine", "heroin", "cannabis",
+        "stolen", "smuggled", "contraband"
+      ]
+    }
+  },
+  "value_rules": {
+    "low_multiplier": 0.2,
+    "high_multiplier": 3.0,
+    "absolute_min_jpy": 1,
+    "suspicious_round_numbers": [100, 500, 1000, 5000, 10000],
+    "default_ranges": {
+      "electronics": { "min": 1000, "max": 1000000 },
+      "clothing": { "min": 500, "max": 100000 },
+      "mechanical": { "min": 2000, "max": 2000000 },
+      "chemical": { "min": 1000, "max": 500000 },
+      "food": { "min": 300, "max": 50000 },
+      "toys": { "min": 500, "max": 100000 },
+      "furniture": { "min": 5000, "max": 1000000 },
+      "metal": { "min": 1000, "max": 500000 },
+      "plastic": { "min": 300, "max": 100000 },
+      "textile": { "min": 500, "max": 200000 },
+      "paper": { "min": 100, "max": 50000 },
+      "ceramic": { "min": 500, "max": 200000 },
+      "glass": { "min": 300, "max": 100000 },
+      "default": { "min": 500, "max": 500000 }
+    }
+  }
+}

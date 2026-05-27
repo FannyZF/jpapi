@@ -1,0 +1,5 @@
+[
+  { "raw_name": "山田太郎", "expected_katakana": "ヤマダタロウ", "expected_romaji": "Yamada Taro" },
+  { "raw_name": "鈴木一郎", "expected_katakana": "スズキイチロウ", "expected_romaji": "Suzuki Ichiro" },
+  { "raw_name": "John Smith", "expected_katakana": "ジョン スミス", "expected_romaji": "John Smith" }
+]

@@ -1,0 +1,31 @@
+{
+  "validAddresses": [
+    {
+      "raw_address": "tokyo minato-ku roppongi 1-1",
+      "provided_zipcode": "106-0032",
+      "expected_prefecture": "Tokyo"
+    },
+    {
+      "raw_address": "大阪府大阪市中央区本町1-1",
+      "provided_zipcode": "541-0053",
+      "expected_prefecture": "Osaka"
+    }
+  ],
+  "invalidAddresses": [
+    {
+      "raw_address": "nonexistent place 99999",
+      "provided_zipcode": "000-0000"
+    }
+  ],
+  "names": [
+    { "raw_name": "山田太郎", "hasKanji": true, "hasHiragana": false },
+    { "raw_name": "たなかはなこ", "hasKanji": false, "hasHiragana": true },
+    { "raw_name": "John Smith", "hasKanji": false, "hasHiragana": false, "isEnglish": true },
+    { "raw_name": "佐藤 花子", "hasKanji": true, "hasHiragana": false }
+  ],
+  "zipcodes": [
+    { "raw": "150-0002", "cleaned": "1500002", "formatted": "150-0002" },
+    { "raw": "106 0032", "cleaned": "1060032", "formatted": "106-0032" },
+    { "raw": "5300001", "cleaned": "5300001", "formatted": "530-0001" }
+  ]
+}

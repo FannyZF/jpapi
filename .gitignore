@@ -1,0 +1,27 @@
+node_modules/
+dist/
+.env
+*.db
+*.db-shm
+*.db-wal
+*.log
+logs/
+coverage/
+.admin_key
+
+# Ignore all data directory except essential production files
+data/*
+!data/hs_codes.csv
+!data/compliance_rules.json
+
+# Dev artifacts
+test_*
+backend/data/test_*
+backend/tests/test_library.json
+
+# Build cache
+frontend/tsconfig.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db
