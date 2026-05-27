@@ -37,6 +37,7 @@
             {{ classifyLoading ? 'Classifying...' : 'Classify' }}
           </button>
         </div>
+        <p v-if="classifyError" class="mt-2 text-red-500 text-sm">{{ classifyError }}</p>
       </div>
 
       <!-- Results -->
@@ -203,6 +204,7 @@ const classifyDesc = ref("");
 const classifyHs = ref("");
 const classifyLoading = ref(false);
 const classifyResult = ref<ClassifyResponse | null>(null);
+const classifyError = ref("");
 
 const attrRows = computed(() => {
   const a = classifyResult.value?.structured_attributes;
@@ -223,14 +225,15 @@ async function doClassify() {
   if (!classifyDesc.value.trim()) return;
   classifyLoading.value = true;
   classifyResult.value = null;
+  classifyError.value = "";
   try {
     const res = await fetchClassify(
       classifyDesc.value.trim(),
       classifyHs.value.trim() || undefined
     );
     classifyResult.value = res.data;
-  } catch (e) {
-    console.error("Classify error:", e);
+  } catch (e: any) {
+    classifyError.value = e?.response?.data?.message || e?.message || "Classification failed";
   }
   finally { classifyLoading.value = false; }
 }
