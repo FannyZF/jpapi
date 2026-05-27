@@ -11,12 +11,48 @@ function isPlaceholderKey(key: string): boolean {
   return !key || key.startsWith("placeholder") || key.length < 20;
 }
 
+// Extract room/apartment number to strip before validation, reattach after
+function extractRoomNumber(address: string): { base: string; room: string } {
+  const roomPatterns = [
+    /(\d+[号ＦFf階阶])\s*$/,
+    /([A-Za-z]?\d{2,4}[号室]?)\s*$/,
+    /(\d{3,4}[号室])\s*$/,
+    /([\d零一二三四五六七八九十]+[号室階Ff])\s*$/,
+    /(\d+[‐\-–—ー]\d+[号室]?)\s*$/,
+    /(\d+[番号]?\s*\d+[号室])\s*$/,
+  ];
+
+  for (const pattern of roomPatterns) {
+    const match = address.match(pattern);
+    if (match) {
+      const room = match[1];
+      const base = address.slice(0, match.index).trim().replace(/[、,]\s*$/, "");
+      return { base, room };
+    }
+  }
+
+  // Try to split on last hyphen/dash if address contains multiple
+  const parts = address.split(/[\s　]+/);
+  if (parts.length >= 2) {
+    const last = parts[parts.length - 1];
+    if (/^\d/.test(last) && last.length <= 10) {
+      const base = parts.slice(0, -1).join(" ");
+      return { base, room: last };
+    }
+  }
+
+  return { base: address, room: "" };
+}
+
 export async function cleanseAddress(
   orderId: string,
   rawAddress: string,
   providedZipcode: string
 ): Promise<AddressServiceResult> {
   const normalizedProvided = providedZipcode.replace(/[\s\-]/g, "");
+
+  // Extract room number, validate base address first
+  const { base: baseAddress, room } = extractRoomNumber(rawAddress);
 
   const zipResult = await fetchZipCloud(providedZipcode);
   const zipValid = zipResult !== null;
@@ -26,7 +62,15 @@ export async function cleanseAddress(
 
   let googleResult = null;
   if (hasValidGoogleKey) {
-    googleResult = await fetchGoogleMaps(rawAddress, providedZipcode);
+    // Try with room-stripped base address first
+    googleResult = await fetchGoogleMaps(baseAddress, providedZipcode);
+    // If base fails and we had a room number, try full address as fallback
+    if (googleResult && !googleResult.address.is_valid && room) {
+      const fullResult = await fetchGoogleMaps(rawAddress, providedZipcode);
+      if (fullResult && fullResult.address.is_valid) {
+        googleResult = fullResult;
+      }
+    }
   }
 
   const googlePostalCode =
@@ -67,12 +111,18 @@ export async function cleanseAddress(
     }
   }
 
+  // Reattach room number to validated result
+  const jaAddress = googleResult?.address.japanese_address ?? (isAddressValid ? baseAddress : rawAddress);
+  const enAddress = googleResult?.address.english_address ?? (isAddressValid ? baseAddress : rawAddress);
+  const finalJa = isAddressValid && room ? `${jaAddress} ${room}` : jaAddress;
+  const finalEn = isAddressValid && room ? `${enAddress} ${room}` : enAddress;
+
   return {
     address: {
       is_valid: isAddressValid,
       validation_level: validationLevel,
-      japanese_address: googleResult?.address.japanese_address ?? rawAddress,
-      english_address: googleResult?.address.english_address ?? rawAddress,
+      japanese_address: finalJa,
+      english_address: finalEn,
     },
     zipcode: {
       match: zipMatch,
