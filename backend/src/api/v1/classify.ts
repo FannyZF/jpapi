@@ -136,16 +136,27 @@ async function classifyOneProduct(
     });
     if (useWebhook) result.webhook_status = "pending";
   } else {
+    // External user: simplified response
     const isChineseInput = /[\u4e00-\u9fff]/.test(raw_description);
-    result.suggested_name = isChineseInput ? cleanDesc.substring(0, 40) : cleanDesc.substring(0, 80);
-    if (best) {
-      result.hs_code = best.code;
-      result.description = isChineseInput ? (best.description_cn || best.description) : best.description;
-      result.confidence = best.confidence;
+    if (useWebhook) {
+      // Webhook mode: no immediate result, only acknowledgment
+      result.mode = "webhook";
+      result.webhook_status = "pending";
+      result.message = "Result will be delivered to your webhook URL";
     } else {
-      result.hs_code = null;
-      result.description = null;
-      result.confidence = 0;
+      // Poll mode: return immediate keyword match
+      result.mode = "poll";
+      result.poll_id = taskId;
+      result.suggested_name = isChineseInput ? cleanDesc.substring(0, 40) : cleanDesc.substring(0, 80);
+      if (best) {
+        result.hs_code = best.code;
+        result.description = isChineseInput ? (best.description_cn || best.description) : best.description;
+        result.confidence = best.confidence;
+      } else {
+        result.hs_code = null;
+        result.description = null;
+        result.confidence = 0;
+      }
     }
   }
 
