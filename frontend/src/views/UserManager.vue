@@ -115,15 +115,17 @@
             </div>
           </div>
           <div>
-            <label class="text-sm text-gray-500">Webhook URL</label>
-            <div class="flex gap-2">
-              <input v-model="editForm.webhook_url" type="text" class="flex-1 border rounded px-3 py-1.5 text-sm" placeholder="https://your-server.com/webhook" />
-              <button @click="generateWebhookUrl" class="px-3 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 whitespace-nowrap">Generate</button>
-            </div>
+            <label class="text-sm text-gray-500">Webhook URL (客户的接收地址)</label>
+            <input v-model="editForm.webhook_url" type="text" class="w-full border rounded px-3 py-1.5 text-sm" placeholder="https://customer-api.com/webhook" />
           </div>
           <div class="flex items-center gap-2">
             <input type="checkbox" v-model="editForm.webhook_enabled" />
             <label class="text-sm text-gray-500">Enable Webhook</label>
+          </div>
+          <div v-if="editForm.webhook_secret" class="bg-gray-50 border rounded p-2 text-xs text-gray-500">
+            <span class="font-medium">Webhook 签名密钥 </span>
+            <code class="bg-gray-200 px-1 rounded select-all">{{ editForm.webhook_secret }}</code>
+            <p class="mt-1">将此密钥交给客户，用于验证 webhook 推送的 <code>X-Webhook-Signature</code> 头 (HMAC-SHA256)。</p>
           </div>
           <div>
             <label class="text-sm text-gray-500">公司名称</label>
@@ -207,6 +209,7 @@ interface UserRow {
   created_at: string;
   last_used_at: string | null;
   webhook_url: string | null;
+  webhook_secret: string | null;
   webhook_enabled: number;
   company_name: string | null;
   contact_email: string | null;
@@ -225,7 +228,7 @@ const newKeyValue = ref("");
 const editTargetId = ref("");
 
 const form = reactive({ name: "", permissions: [] as string[] });
-const editForm = reactive({ name: "", permissions: [] as string[], webhook_url: "", webhook_enabled: false, company_name: "", contact_email: "", contact_phone: "" });
+const editForm = reactive({ name: "", permissions: [] as string[], webhook_url: "", webhook_secret: "", webhook_enabled: false, company_name: "", contact_email: "", contact_phone: "" });
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString();
@@ -271,18 +274,12 @@ function editUser(u: UserRow) {
   editForm.name = u.name;
   editForm.permissions = [...u.permissions];
   editForm.webhook_url = u.webhook_url || "";
+  editForm.webhook_secret = u.webhook_secret || "";
   editForm.webhook_enabled = u.webhook_enabled === 1;
   editForm.company_name = u.company_name || "";
   editForm.contact_email = u.contact_email || "";
   editForm.contact_phone = u.contact_phone || "";
   showEdit.value = true;
-}
-
-function generateWebhookUrl() {
-  const token = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join('');
-  const base = window.location.origin;
-  editForm.webhook_url = `${base}/api/v1/webhook/in/${editTargetId.value}/${token}`;
-  editForm.webhook_enabled = true;
 }
 
 async function doUpdate() {

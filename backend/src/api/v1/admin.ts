@@ -22,6 +22,7 @@ router.get("/users", (_req: Request, res: Response) => {
       created_at: u.created_at,
       last_used_at: u.last_used_at,
       webhook_url: u.webhook_url,
+      webhook_secret: u.webhook_secret,
       webhook_enabled: u.webhook_enabled,
       company_name: u.company_name,
       contact_email: u.contact_email,
