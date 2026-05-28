@@ -45,13 +45,12 @@
 
 <script setup lang="ts">
 import { useRouter } from "vue-router";
-import api from "../api";
+import api, { clearSessionKey } from "../api";
 
 const router = useRouter();
 
 function logout() {
-  localStorage.removeItem("admin_api_key");
-  delete api.defaults.headers.common["X-API-Key"];
+  clearSessionKey();
   router.push("/login");
 }
 </script>

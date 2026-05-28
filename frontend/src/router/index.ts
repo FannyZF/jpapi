@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { hasSessionKey } from "../api";
 import Dashboard from "../views/Dashboard.vue";
 import CacheManager from "../views/CacheManager.vue";
 import Settings from "../views/Settings.vue";
@@ -25,7 +26,7 @@ const router = createRouter({
 });
 
 router.beforeEach((to, _from, next) => {
-  const hasKey = !!localStorage.getItem("admin_api_key");
+  const hasKey = hasSessionKey();
   if (to.path !== "/login" && !hasKey) {
     next("/login");
   } else if (to.path === "/login" && hasKey) {

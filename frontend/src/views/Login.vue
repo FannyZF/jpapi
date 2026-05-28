@@ -30,7 +30,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import api from "../api";
+import api, { setSessionKey, hasSessionKey } from "../api";
 
 const router = useRouter();
 const route = useRoute();
@@ -38,6 +38,10 @@ const apiKey = ref("");
 const error = ref("");
 
 onMounted(async () => {
+  if (hasSessionKey()) {
+    router.push("/");
+    return;
+  }
   const urlKey = (route.query.key as string) || "";
   if (urlKey) {
     apiKey.value = urlKey;
@@ -52,8 +56,7 @@ async function login() {
     await api.get("/health", {
       headers: { "X-API-Key": apiKey.value.trim() },
     });
-    localStorage.setItem("admin_api_key", apiKey.value.trim());
-    api.defaults.headers.common["X-API-Key"] = apiKey.value.trim();
+    setSessionKey(apiKey.value.trim());
     router.push("/");
   } catch {
     error.value = "API Key 无效，请重试";

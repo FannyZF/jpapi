@@ -1,21 +1,31 @@
 import axios from "axios";
 
+let sessionKey: string | null = null;
+
 const api = axios.create({
   baseURL: "/api/v1",
   timeout: 30000,
 });
 
-const storedKey = localStorage.getItem("admin_api_key");
-if (storedKey) {
-  api.defaults.headers.common["X-API-Key"] = storedKey;
+export function setSessionKey(key: string) {
+  sessionKey = key;
+  api.defaults.headers.common["X-API-Key"] = key;
+}
+
+export function clearSessionKey() {
+  sessionKey = null;
+  delete api.defaults.headers.common["X-API-Key"];
+}
+
+export function hasSessionKey(): boolean {
+  return !!sessionKey;
 }
 
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response && (err.response.status === 401 || err.response.status === 403)) {
-      localStorage.removeItem("admin_api_key");
-      delete api.defaults.headers.common["X-API-Key"];
+      clearSessionKey();
       window.location.href = "/login";
     }
     return Promise.reject(err);
