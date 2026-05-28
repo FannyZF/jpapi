@@ -122,9 +122,9 @@
             <input type="checkbox" v-model="editForm.webhook_enabled" />
             <label class="text-sm text-gray-500">Enable Webhook</label>
           </div>
-          <div v-if="editForm.webhook_secret" class="bg-gray-50 border rounded p-2 text-xs text-gray-500">
+          <div class="bg-gray-50 border rounded p-2 text-xs text-gray-500">
             <span class="font-medium">Webhook 签名密钥 </span>
-            <code class="bg-gray-200 px-1 rounded select-all">{{ editForm.webhook_secret }}</code>
+            <code class="bg-gray-200 px-1 rounded select-all">{{ editForm.webhook_secret || '(自动生成，创建用户时分配)' }}</code>
             <p class="mt-1">将此密钥交给客户，用于验证 webhook 推送的 <code>X-Webhook-Signature</code> 头 (HMAC-SHA256)。</p>
           </div>
           <div>
