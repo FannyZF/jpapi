@@ -146,24 +146,104 @@
     </div>
 
     <!-- Regenerated Key Modal -->
-    <div v-if="showNewKey" class="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-lg p-6 max-w-lg">
+    <div v-if="showNewKey" class="fixed inset-0 bg-black/30 flex items-center justify-center z-50 overflow-y-auto py-8">
+      <div class="bg-white rounded-lg shadow-lg p-6 max-w-2xl">
         <h3 class="text-lg font-semibold mb-2">New API Key Generated</h3>
         <p class="text-sm text-gray-500 mb-3">Save this key now. It will not be shown again.</p>
         <code class="block bg-green-50 border border-green-200 rounded p-3 text-sm font-mono break-all mb-4">{{ newKeyValue }}</code>
-        <div class="bg-gray-50 border rounded p-3 mb-4 text-xs space-y-2">
-          <p class="font-semibold text-gray-700">请求签名说明 (HMAC-SHA256)</p>
-          <p class="text-gray-500">所有 API 请求需携带 <code class="bg-gray-200 px-1 rounded">X-Signature</code> 请求头：</p>
-          <pre class="bg-gray-800 text-green-400 p-2 rounded overflow-auto"><code>import hmac, hashlib
+        <div class="bg-gray-50 border rounded p-3 mb-4 text-xs space-y-3">
+          <p class="font-semibold text-gray-700">请求签名 (HMAC-SHA256) — 发送给客户的多语言示例</p>
 
-api_key = "{{ newKeyValue }}"
-body = '{"raw_description":"Product Name"}'   # 紧凑 JSON
-signature = hmac.new(
-    api_key.encode(), body.encode(), hashlib.sha256
-).hexdigest()
-# 发送请求时附带:
-# X-API-Key: {{ newKeyValue }}
-# X-Signature: {signature}</code></pre>
+          <details class="mb-2" open>
+            <summary class="font-medium text-blue-600 cursor-pointer">Python</summary>
+            <pre class="bg-gray-800 text-green-400 p-2 rounded mt-1 overflow-auto"><code>import hmac, hashlib, requests, json
+
+API_KEY = "{{ newKeyValue }}"
+body = {"raw_description": "Laptop Computer"}
+
+body_str = json.dumps(body, separators=(",", ":"))
+sig = hmac.new(API_KEY.encode(), body_str.encode(), hashlib.sha256).hexdigest()
+
+resp = requests.post(
+    "http://YOUR_SERVER/api/v1/classify",
+    data=body_str,
+    headers={"X-API-Key": API_KEY, "X-Signature": sig, "Content-Type": "application/json"}
+)
+print(resp.json())</code></pre>
+          </details>
+
+          <details>
+            <summary class="font-medium text-blue-600 cursor-pointer">Node.js / TypeScript</summary>
+            <pre class="bg-gray-800 text-green-400 p-2 rounded mt-1 overflow-auto"><code>const crypto = require("crypto");
+
+const API_KEY = "{{ newKeyValue }}";
+const body = JSON.stringify({ raw_description: "Laptop Computer" });
+
+const sig = crypto.createHmac("sha256", API_KEY).update(body).digest("hex");
+
+const resp = await fetch("http://YOUR_SERVER/api/v1/classify", {
+  method: "POST",
+  body,
+  headers: {"X-API-Key": API_KEY, "X-Signature": sig, "Content-Type": "application/json"}
+});
+console.log(await resp.json());</code></pre>
+          </details>
+
+          <details>
+            <summary class="font-medium text-blue-600 cursor-pointer">Java</summary>
+            <pre class="bg-gray-800 text-green-400 p-2 rounded mt-1 overflow-auto"><code>import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.net.http.*;
+
+String apiKey = "{{ newKeyValue }}";
+String body = "{\"raw_description\":\"Laptop Computer\"}";
+
+Mac mac = Mac.getInstance("HmacSHA256");
+mac.init(new SecretKeySpec(apiKey.getBytes(), "HmacSHA256"));
+String sig = bytesToHex(mac.doFinal(body.getBytes()));
+
+HttpRequest req = HttpRequest.newBuilder()
+    .uri(URI.create("http://YOUR_SERVER/api/v1/classify"))
+    .header("X-API-Key", apiKey)
+    .header("X-Signature", sig)
+    .header("Content-Type", "application/json")
+    .POST(HttpRequest.BodyPublishers.ofString(body))
+    .build();</code></pre>
+          </details>
+
+          <details>
+            <summary class="font-medium text-blue-600 cursor-pointer">cURL (bash)</summary>
+            <pre class="bg-gray-800 text-green-400 p-2 rounded mt-1 overflow-auto"><code>API_KEY="{{ newKeyValue }}"
+BODY='{"raw_description":"Laptop Computer"}'
+SIG=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "$API_KEY" | awk '{print $2}')
+
+curl -X POST "http://YOUR_SERVER/api/v1/classify" \
+  -H "X-API-Key: $API_KEY" \
+  -H "X-Signature: $SIG" \
+  -H "Content-Type: application/json" \
+  -d "$BODY"</code></pre>
+          </details>
+
+          <details>
+            <summary class="font-medium text-blue-600 cursor-pointer">PHP</summary>
+            <pre class="bg-gray-800 text-green-400 p-2 rounded mt-1 overflow-auto"><code>$API_KEY = "{{ newKeyValue }}";
+$body = json_encode(["raw_description" => "Laptop Computer"], JSON_UNESCAPED_UNICODE);
+
+$sig = hash_hmac("sha256", $body, $API_KEY);
+
+$ch = curl_init("http://YOUR_SERVER/api/v1/classify");
+curl_setopt_array($ch, [
+    CURLOPT_POST => true,
+    CURLOPT_POSTFIELDS => $body,
+    CURLOPT_HTTPHEADER => [
+        "X-API-Key: $API_KEY",
+        "X-Signature: $sig",
+        "Content-Type: application/json"
+    ],
+    CURLOPT_RETURNTRANSFER => true,
+]);
+echo curl_exec($ch);</code></pre>
+          </details>
         </div>
         <button @click="showNewKey = false" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Done</button>
       </div>
