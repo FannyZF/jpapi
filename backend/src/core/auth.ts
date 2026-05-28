@@ -58,7 +58,8 @@ export function authMiddleware(
         const user = getUserByApiKey(apiKey);
         if (user) {
           setUserLastUsed(apiKey);
-          (req as Request & { user?: typeof user }).user = user;
+          (req as Request & { user?: typeof user; rawApiKey?: string }).user = user;
+          (req as any).rawApiKey = apiKey;
         }
       }
       next();
@@ -105,6 +106,7 @@ export function authMiddleware(
 
   setUserLastUsed(apiKey);
 
+  (req as any).rawApiKey = apiKey;
   (req as Request & { user?: typeof user }).user = user;
 
   next();

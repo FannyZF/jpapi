@@ -18,6 +18,9 @@ export interface ApiCallLog {
   deepseek_tokens: number;
   qwen_tokens: number;
   webhook_status: string | null;
+  request_signature: string | null;
+  request_hash: string | null;
+  response_hash: string | null;
   created_at: string;
 }
 
@@ -98,6 +101,9 @@ export function ensureApiCallLogsTable(): void {
   try { db.exec("ALTER TABLE api_call_logs ADD COLUMN deepseek_tokens INTEGER DEFAULT 0"); } catch (_e) {}
   try { db.exec("ALTER TABLE api_call_logs ADD COLUMN qwen_tokens INTEGER DEFAULT 0"); } catch (_e) {}
   try { db.exec("ALTER TABLE api_call_logs ADD COLUMN webhook_status TEXT DEFAULT NULL"); } catch (_e) {}
+  try { db.exec("ALTER TABLE api_call_logs ADD COLUMN request_signature TEXT"); } catch (_e) {}
+  try { db.exec("ALTER TABLE api_call_logs ADD COLUMN request_hash TEXT"); } catch (_e) {}
+  try { db.exec("ALTER TABLE api_call_logs ADD COLUMN response_hash TEXT"); } catch (_e) {}
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_api_call_logs_user_id
     ON api_call_logs(user_id)
@@ -115,21 +121,13 @@ export function ensureApiCallLogsTable(): void {
 export function insertApiCallLog(log: ApiCallLog): void {
   const db = getHistoryDb();
   db.prepare(
-    `INSERT INTO api_call_logs (id, user_id, user_name, method, api_path, operation_type, status_code, processing_time_ms, ip_address, order_id, request_body, response_body, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO api_call_logs (id, user_id, user_name, method, api_path, operation_type, status_code, processing_time_ms, ip_address, order_id, request_body, response_body, request_signature, request_hash, response_hash, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
-    log.id,
-    log.user_id,
-    log.user_name,
-    log.method,
-    log.api_path,
-    log.operation_type,
-    log.status_code,
-    log.processing_time_ms,
-    log.ip_address,
-    log.order_id,
-    log.request_body,
-    log.response_body,
+    log.id, log.user_id, log.user_name, log.method, log.api_path,
+    log.operation_type, log.status_code, log.processing_time_ms,
+    log.ip_address, log.order_id, log.request_body, log.response_body,
+    log.request_signature, log.request_hash, log.response_hash,
     log.created_at
   );
 }
@@ -204,6 +202,9 @@ function rowToLogRecord(row: Record<string, unknown>): ApiCallLog {
     deepseek_tokens: (row.deepseek_tokens as number) || 0,
     qwen_tokens: (row.qwen_tokens as number) || 0,
     webhook_status: (row.webhook_status as string) || null,
+    request_signature: (row.request_signature as string) || null,
+    request_hash: (row.request_hash as string) || null,
+    response_hash: (row.response_hash as string) || null,
     created_at: row.created_at as string,
   };
 }

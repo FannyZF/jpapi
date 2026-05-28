@@ -39,6 +39,8 @@ describe("Address Schema", () => {
         address: {
           is_valid: true,
           validation_level: "PREMISE",
+          verdict_level: "reliable",
+          verdict_message: "地址精确到门牌号",
           japanese_address: "東京都港区六本木1丁目1",
           english_address: "1-chome-1 Roppongi, Minato City, Tokyo",
         },

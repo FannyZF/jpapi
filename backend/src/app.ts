@@ -10,6 +10,7 @@ import { ensureApiCallLogsTable, ensureInvoicesTable } from "./services/billingS
 import { ensureHsCodeTable } from "./services/hsCode.service";
 import { getRedisClient } from "./services/cache";
 import { authMiddleware } from "./core/auth";
+import { signatureMiddleware } from "./core/signature";
 import { apiCallLoggingMiddleware } from "./core/logging";
 import { createRateLimiter } from "./core/rateLimiter";
 import { logger } from "./core/logger";
@@ -54,6 +55,8 @@ app.use("/api/v1", healthRouter);
 app.use("/api/v1", webhookReceiverRouter);
 
 app.use(authMiddleware);
+
+app.use(signatureMiddleware);
 
 app.use("/api/v1", settingsRouter);
 app.use("/api/v1", adminRouter);

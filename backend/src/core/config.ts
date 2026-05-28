@@ -23,6 +23,7 @@ const envSchema = z.object({
   HUNYUAN_MODEL: z.string().default("hunyuan-turbo"),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default("gemini-2.0-flash-lite"),
+  SIGNATURE_REQUIRED: z.string().default("true"),
 });
 
 const parsed = envSchema.safeParse(process.env);
