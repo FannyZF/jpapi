@@ -142,7 +142,11 @@ export async function fetchGoogleMaps(
       postalCode: jaResult?.postalCode || enResult?.postalCode || "",
     };
 
-    await cacheSet(cacheKey, result);
+    // Only cache high-quality results: SUB_PREMISE, PREMISE, STREET_ADDRESS
+    const CACHEABLE_LEVELS = ["SUB_PREMISE", "PREMISE", "STREET_ADDRESS"];
+    if (CACHEABLE_LEVELS.includes(validationLevel)) {
+      await cacheSet(cacheKey, result);
+    }
     return { ...result, source: "live" };
   } catch {
     return null;
