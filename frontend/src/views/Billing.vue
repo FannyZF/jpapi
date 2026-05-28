@@ -145,6 +145,7 @@
                   <a :href="getInvoicePdfUrl(inv.id)" target="_blank" class="text-red-600 hover:underline text-xs">PDF</a>
                   <a :href="getInvoiceCsvUrl(inv.id)" target="_blank" class="text-green-600 hover:underline text-xs">CSV</a>
                   <button v-if="!inv.paid" @click="markPaid(inv.id)" class="px-2 py-0.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">已付款</button>
+                  <button v-if="!inv.paid" @click="confirmReturn(inv)" class="px-2 py-0.5 text-xs bg-orange-500 text-white rounded hover:bg-orange-600">退回</button>
                 </div>
               </td>
             </tr>
@@ -277,7 +278,7 @@ import { ref, reactive, onMounted, computed } from "vue";
 import AppLayout from "../components/AppLayout.vue";
 import {
   fetchBillingSummary, fetchBillingLogs, getBillingExportUrl,
-  generateInvoice, fetchInvoices, payInvoice, getInvoicePdfUrl, getInvoiceCsvUrl,
+  generateInvoice, fetchInvoices, payInvoice, returnInvoice, getInvoicePdfUrl, getInvoiceCsvUrl,
   type BillingSummaryRow, type BillingLogRecord, type InvoiceRecord, type InvoiceBreakdownItem,
 } from "../api";
 import api from "../api";
@@ -427,6 +428,18 @@ async function markPaid(invoiceId: string) {
     await payInvoice(invoiceId);
     await loadInvoices();
   } catch { error.value = "标记付款失败"; }
+}
+
+function confirmReturn(inv: InvoiceRecord) {
+  if (!confirm(`退回账单 ${inv.bill_number}（¥${inv.total_amount.toFixed(2)}）？退回后可在"生成账单"中重新生成。`)) return;
+  doReturn(inv.id);
+}
+
+async function doReturn(invoiceId: string) {
+  try {
+    await returnInvoice(invoiceId);
+    await loadInvoices();
+  } catch { error.value = "退回失败"; }
 }
 
 onMounted(() => {

@@ -314,6 +314,10 @@ export function payInvoice(invoiceId: string) {
   return api.put<{ status: string; invoice: InvoiceRecord }>(`/billing/invoice/${invoiceId}/pay`);
 }
 
+export function returnInvoice(invoiceId: string) {
+  return api.delete<{ status: string; message: string }>(`/billing/invoice/${invoiceId}/return`);
+}
+
 export function getInvoicePdfUrl(invoiceId: string) {
   return `/api/v1/billing/invoice/${invoiceId}/pdf`;
 }

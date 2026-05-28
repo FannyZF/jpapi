@@ -605,6 +605,14 @@ export function findExistingInvoice(userId: string, startDate: string, endDate: 
   return row ? rowToInvoice(row) : null;
 }
 
+export function deleteInvoice(id: string): boolean {
+  const invoice = getInvoice(id);
+  if (!invoice || invoice.paid === 1) return false;
+  const db = getHistoryDb();
+  db.prepare("DELETE FROM invoices WHERE id = ?").run(id);
+  return true;
+}
+
 export function getUnpaidTotal(userId?: string): number {
   const db = getHistoryDb();
   let row: { total: number } | undefined;

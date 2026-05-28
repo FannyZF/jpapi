@@ -13,6 +13,7 @@ import {
   getInvoiceDetailLogs,
   generateInvoicePdf,
   findExistingInvoice,
+  deleteInvoice,
   DEFAULT_PRICING,
   DEFAULT_COMPANY,
 } from "../../services/billingStore";
@@ -325,6 +326,24 @@ router.put("/billing/invoice/:id/pay", (req: Request, res: Response) => {
     res.json({ status: "success", invoice });
   } catch (err) {
     res.status(500).json({ status: "error", message: "Failed to mark as paid", details: String(err) });
+  }
+});
+
+router.delete("/billing/invoice/:id/return", (req: Request, res: Response) => {
+  try {
+    const invoice = getInvoice(req.params.id);
+    if (!invoice) {
+      res.status(404).json({ status: "error", message: "Invoice not found" });
+      return;
+    }
+    if (invoice.paid) {
+      res.status(403).json({ status: "error", message: "已付款账单不可退回" });
+      return;
+    }
+    deleteInvoice(req.params.id);
+    res.json({ status: "success", message: "账单已退回，可重新生成" });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: "Failed to return invoice", details: String(err) });
   }
 });
 
