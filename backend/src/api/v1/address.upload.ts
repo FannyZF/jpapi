@@ -164,12 +164,12 @@ function extractRoomNumberForUpload(address: string): { base: string; room: stri
     if (m) return { base: address.slice(0, m.index).trim().replace(/[、,]\s*$/, ""), room: m[1] };
   }
 
-  // 2. Trailing dash-number: always strip last segment for any dash-connected numbers
-  // Google Maps doesn't validate to building (号) level, so we strip+reattach to preserve
-  const lastDash = address.match(/(\d+[‐\-–—ー])+(\d+)$/);
+  // 2. Trailing dash-number: strip only the LAST dash-segment, not the whole chain
+  // "1-8-10" → strip "-10", keep "1-8" in base
+  const lastDash = address.match(/[‐\-–—ー](\d+)$/);
   if (lastDash) {
-    const base = address.slice(0, lastDash.index).trim().replace(/[‐\-–—ー]\s*$/, "");
-    return { base, room: lastDash[2] };
+    const base = address.slice(0, lastDash.index).trim();
+    return { base, room: lastDash[1] };
   }
 
   // 3. Trailing isolated number (3+ digits, likely room/apartment)
