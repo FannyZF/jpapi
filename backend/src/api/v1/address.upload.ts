@@ -224,12 +224,23 @@ router.post("/jp/cleanse/address/download", (req: Request, res: Response) => {
     ]];
 
     for (const r of rows) {
-      const statusLabel = r.status === "verified" ? "✓ VERIFIED" : "⚠ UNVERIFIED";
+      const isModified = !!r._modified;
+      const isVerified = r.status === "verified";
+      const statusLabel = isModified ? "✓ 已修改" : isVerified ? "✓ VERIFIED" : "⚠ UNVERIFIED";
+
+      // For modified rows, use the correction as the full street detail
+      const streetDetail = isModified ? r.correction : r.validatedStreet;
+      // Full Japanese address: 日本、〒zip code correction
+      const correctedZip = r.validatedZip || r.zip || "";
+      const fullAddrDetail = isModified
+        ? `日本、〒${correctedZip} ${r.correction || r.validatedFull || ""}`
+        : `日本、〒${correctedZip} ${r.correction || r.validatedFull || ""}`;
+
       output.push([
         r.pref || "", r.city || "", r.ward || "", r.addr || "", r.zip || "",
-        r.validatedPref || "", r.validatedCity || "", r.validatedWard || "", r.validatedStreet || "",
-        r.correction || r.validatedFull || "",
-        r.validatedZip || "",
+        r.validatedPref || "", r.validatedCity || "", r.validatedWard || "", streetDetail || "",
+        fullAddrDetail,
+        correctedZip,
         statusLabel,
         r.validationLevel || "",
         r.message || "",
