@@ -134,15 +134,11 @@ function extractRoomNumberForUpload(address: string): { base: string; room: stri
     /(\d+[号ＦFf階阶])\s*$/,
     /([A-Za-z]?\d{2,4}[号室]?)\s*$/,
     /(\d{3,4}[号室])\s*$/,
-    /(\d+[‐\-–—ー]\d+[号室]?)\s*$/,
+    /(\d+[‐\-–—ー]\d+[号室])\s*$/,
   ];
   for (const p of patterns) {
     const m = address.match(p);
     if (m) return { base: address.slice(0, m.index).trim().replace(/[、,]\s*$/, ""), room: m[1] };
-  }
-  const parts = address.split(/[\s　]+/);
-  if (parts.length >= 2 && /^\d/.test(parts[parts.length - 1]) && parts[parts.length - 1].length <= 10) {
-    return { base: parts.slice(0, -1).join(" "), room: parts[parts.length - 1] };
   }
   return { base: address, room: "" };
 }

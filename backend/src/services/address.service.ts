@@ -38,7 +38,7 @@ function extractRoomNumber(address: string): { base: string; room: string } {
     /([A-Za-z]?\d{2,4}[号室]?)\s*$/,
     /(\d{3,4}[号室])\s*$/,
     /([\d零一二三四五六七八九十]+[号室階Ff])\s*$/,
-    /(\d+[‐\-–—ー]\d+[号室]?)\s*$/,
+    /(\d+[‐\-–—ー]\d+[号室])\s*$/,
     /(\d+[番号]?\s*\d+[号室])\s*$/,
   ];
 
@@ -48,16 +48,6 @@ function extractRoomNumber(address: string): { base: string; room: string } {
       const room = match[1];
       const base = address.slice(0, match.index).trim().replace(/[、,]\s*$/, "");
       return { base, room };
-    }
-  }
-
-  // Try to split on last hyphen/dash if address contains multiple
-  const parts = address.split(/[\s　]+/);
-  if (parts.length >= 2) {
-    const last = parts[parts.length - 1];
-    if (/^\d/.test(last) && last.length <= 10) {
-      const base = parts.slice(0, -1).join(" ");
-      return { base, room: last };
     }
   }
 
