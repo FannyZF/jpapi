@@ -3,6 +3,7 @@ import multer from "multer";
 import crypto from "crypto";
 import * as XLSX from "xlsx";
 import { cleanseAddress, splitAddressComponents } from "../../services/address.service";
+import { fetchGoogleMaps } from "../../services/googleMaps";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -109,10 +110,17 @@ router.post("/jp/cleanse/address/upload", upload.single("file"), async (req: Req
             refId,
           ]);
         } else {
-          // Unverified: use full original address with all dash numbers, split cols = original
+          // Unverified: try full address for Japanese translation
+          let jaFull = fullAddr;
+          try {
+            const fullResult = await fetchGoogleMaps(fullAddr, zip);
+            if (fullResult) {
+              jaFull = fullResult.address.japanese_address;
+            }
+          } catch { /* use original */ }
           output.push([pref, city, ward, addr, zip,
             pref, city, ward, addr,
-            fullAddr,                          // 完整原始地址（不剥离任何部分）
+            jaFull,
             zip,
             "⚠ UNVERIFIED",
             address.validation_level,
