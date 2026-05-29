@@ -34,9 +34,8 @@ function isPlaceholderKey(key: string): boolean {
 // Extract room/apartment number to strip before validation, reattach after
 function extractRoomNumber(address: string): { base: string; room: string } {
   const roomPatterns = [
-    /(\d+[号ＦFf階阶])\s*$/,
-    /([A-Za-z]?\d{2,4}[号室]?)\s*$/,
-    /(\d{3,4}[号室])\s*$/,
+    /(\d+[号室階Ff])\s*$/,
+    /([A-Za-z]?\d{2,4}[号室階Ff])\s*$/,
     /([\d零一二三四五六七八九十]+[号室階Ff])\s*$/,
     /(\d+[‐\-–—ー]\d+[号室])\s*$/,
     /(\d+[番号]?\s*\d+[号室])\s*$/,

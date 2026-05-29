@@ -97,11 +97,12 @@ router.post("/jp/cleanse/address/upload", upload.single("file"), async (req: Req
 
         if (address.is_valid) {
           const split = splitAddressComponents(components, room || undefined);
+          const correctZip = result.zipcode?.match ? zip : (result.zipcode?.suggested_correct || zip);
           output.push([
             pref, city, ward, addr, zip,
             split?.prefecture || "", split?.city || "", split?.ward || "", split?.street || "",
             fullJaAddress,
-            result.zipcode?.match ? zip : (result.zipcode?.suggested_correct || zip),
+            correctZip,
             "verified",
             address.validation_level,
             address.verdict_message || "",
@@ -130,10 +131,10 @@ router.post("/jp/cleanse/address/upload", upload.single("file"), async (req: Req
 });
 
 function extractRoomNumberForUpload(address: string): { base: string; room: string } {
+  // Only strip parts with room suffixes (号室/号/室/F/階/階層)
   const patterns = [
-    /(\d+[号ＦFf階阶])\s*$/,
-    /([A-Za-z]?\d{2,4}[号室]?)\s*$/,
-    /(\d{3,4}[号室])\s*$/,
+    /(\d+[号室階Ff])\s*$/,
+    /([A-Za-z]?\d{2,4}[号室階Ff])\s*$/,
     /(\d+[‐\-–—ー]\d+[号室])\s*$/,
   ];
   for (const p of patterns) {
