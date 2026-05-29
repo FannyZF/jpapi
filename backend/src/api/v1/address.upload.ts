@@ -66,7 +66,7 @@ router.post("/jp/cleanse/address/upload", upload.single("file"), async (req: Req
     // Output header
     const output: any[][] = [[
       "県（原始）", "市（原始）", "区（原始）", "具体地址（原始）", "邮编（原始）",
-      "県（验证）", "市（验证）", "区（验证）", "具体地址（验证）", "邮编（验证）",
+      "県（验证）", "市（验证）", "区（验证）", "具体地址（验证）", "验证后完整日文地址", "邮编（验证）",
       "验证状态", "验证精度", "提示信息", "参考编号",
     ]];
 
@@ -93,12 +93,14 @@ router.post("/jp/cleanse/address/upload", upload.single("file"), async (req: Req
         const result = await cleanseAddress(refId, base, zip);
         const address = result.address;
         const components = (result as any).components || {};
+        const fullJaAddress = room ? (address.japanese_address + " " + room) : address.japanese_address;
 
         if (address.is_valid) {
           const split = splitAddressComponents(components, room || undefined);
           output.push([
             pref, city, ward, addr, zip,
             split?.prefecture || "", split?.city || "", split?.ward || "", split?.street || "",
+            fullJaAddress,
             result.zipcode?.match ? zip : (result.zipcode?.suggested_correct || zip),
             "verified",
             address.validation_level,
@@ -106,10 +108,10 @@ router.post("/jp/cleanse/address/upload", upload.single("file"), async (req: Req
             refId,
           ]);
         } else {
-          output.push([pref, city, ward, addr, zip, "", "", "", "", "", "unverified", address.validation_level, address.verdict_message || "Address not valid", refId]);
+          output.push([pref, city, ward, addr, zip, "", "", "", "", fullJaAddress, "", "unverified", address.validation_level, address.verdict_message || "Address not valid", refId]);
         }
       } catch {
-        output.push([pref, city, ward, addr, zip, "", "", "", "", "", "unverified", "", "Processing error", refId]);
+        output.push([pref, city, ward, addr, zip, "", "", "", "", "", "", "unverified", "", "Processing error", refId]);
       }
     }
 
