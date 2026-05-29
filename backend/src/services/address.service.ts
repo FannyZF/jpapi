@@ -155,6 +155,7 @@ export async function cleanseAddress(
       provided: providedZipcode,
       suggested_correct: suggestedCorrect,
     },
+    components: googleResult?.components || {},
     source,
   };
 }
