@@ -164,12 +164,15 @@ function extractRoomNumberForUpload(address: string): { base: string; room: stri
     if (m) return { base: address.slice(0, m.index).trim().replace(/[、,]\s*$/, ""), room: m[1] };
   }
 
-  // 2. Trailing dash-number: strip only the LAST dash-segment, not the whole chain
-  // "1-8-10" → strip "-10", keep "1-8" in base
-  const lastDash = address.match(/[‐\-–—ー](\d+)$/);
-  if (lastDash) {
-    const base = address.slice(0, lastDash.index).trim();
-    return { base, room: lastDash[1] };
+  // 2. Trailing dash-number: strip only if 3+ dash segments (e.g., "4-15-1-1012")
+  // 2-segment like "1-30" (1丁目30番) should NOT be split
+  const segCount = (address.match(/[‐\-–—ー]\d+/g) || []).length;
+  if (segCount >= 2) {
+    const lastDash = address.match(/[‐\-–—ー](\d+)$/);
+    if (lastDash) {
+      const base = address.slice(0, lastDash.index).trim();
+      return { base, room: lastDash[1] };
+    }
   }
 
   // 3. Trailing isolated number (3+ digits, likely room/apartment)
