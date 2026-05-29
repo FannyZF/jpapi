@@ -235,7 +235,7 @@ router.post("/jp/cleanse/address/download", (req: Request, res: Response) => {
 
       const fullAddrDetail = isModified || !isVerified
         ? `日本、〒${correctedZip} ${r.correction || r.validatedFull || ""}`
-        : `〒${correctedZip} ${r.validatedFull || ""}`;
+        : (r.validatedFull || "");
 
       output.push([
         r.tracking || "",
