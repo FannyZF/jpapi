@@ -5,7 +5,7 @@ import { formatZipcode } from "../utils/textCleaner";
 import type { AddressCleanseResponse } from "../schemas/address";
 
 type Source = "live" | "cache" | "fallback";
-type AddressServiceResult = AddressCleanseResponse["data"] & { source: Source };
+type AddressServiceResult = AddressCleanseResponse["data"] & { source: Source; components: Record<string, string> };
 
 export interface SplitAddress {
   prefecture: string;
