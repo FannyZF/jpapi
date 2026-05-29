@@ -207,35 +207,64 @@
     <div v-show="country === 'us'" class="space-y-6">
       <!-- USA Classify -->
       <div class="bg-white rounded-lg shadow border p-4">
-        <h2 class="text-lg font-semibold mb-3">US HS Code Classification</h2>
+        <h2 class="text-lg font-semibold mb-3">US HTS Code Classification</h2>
         <div class="flex gap-3 items-end mb-3">
           <div class="flex flex-col gap-1 flex-1">
             <label class="text-xs text-gray-500">Product Description *</label>
             <input v-model="usDesc" type="text" class="border rounded px-3 py-2 text-sm w-full" placeholder="e.g. Laptop Computer" @keyup.enter="doUsClassify" />
           </div>
           <div class="flex flex-col gap-1 w-44">
-            <label class="text-xs text-gray-500">HS Code (verify)</label>
+            <label class="text-xs text-gray-500">HTS Code (verify)</label>
             <input v-model="usHs" type="text" class="border rounded px-3 py-2 text-sm" placeholder="e.g. 84713000" @keyup.enter="doUsClassify" />
           </div>
           <button @click="doUsClassify" :disabled="usLoading" class="px-6 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50">
-            {{ usLoading ? '...' : 'Classify' }}
+            {{ usLoading ? 'Classifying...' : 'Classify' }}
           </button>
         </div>
         <p v-if="usError" class="text-red-500 text-sm">{{ usError }}</p>
-        <div v-if="usResult" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded text-sm space-y-1">
-          <div><span class="text-gray-500">HS Code:</span> <span class="font-bold">{{ usResult.hs_code || '—' }}</span></div>
-          <div><span class="text-gray-500">Description:</span> {{ usResult.description || '—' }}</div>
-          <div><span class="text-gray-500">Confidence:</span> {{ (usResult.confidence * 100).toFixed(0) }}%</div>
-          <div v-if="usResult.mode === 'verify'">
-            <span class="text-gray-500">Verification:</span>
-            <span :class="usResult.matched ? 'text-green-700' : 'text-red-600'">
-              {{ usResult.matched ? 'Matched' : 'Not matched' }}
-            </span>
+
+        <div v-if="usResult" class="mt-4 space-y-4">
+          <!-- Suggested Name -->
+          <div v-if="usResult.suggested_name" class="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded">
+            <div class="text-sm text-blue-800 font-bold">{{ usResult.suggested_name }}</div>
           </div>
-          <div v-if="usResult.alternatives?.length" class="mt-1">
-            <span class="text-gray-500 text-xs">Alternatives:</span>
-            <div v-for="alt in usResult.alternatives" :key="alt.code" class="text-xs text-gray-600 ml-2">
-              {{ alt.code }} — {{ alt.description }} ({{ (alt.confidence*100).toFixed(0) }}%)
+          <!-- Verification -->
+          <div v-if="usResult.mode === 'verify'" class="p-3 rounded text-sm"
+            :class="usResult.matched ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'">
+            <span class="font-medium">{{ usResult.matched ? 'Matched' : 'Not matched' }}</span>
+            <span class="text-xs ml-2">Provided: {{ usResult.provided_hs_code }} → Suggested: {{ usResult.suggested_hs_code || 'none' }}</span>
+          </div>
+          <!-- Best Match -->
+          <div v-if="usResult.best_guess" class="p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="text-xs text-gray-500">Best Match</div>
+                <div class="font-bold text-green-800">{{ usResult.best_guess.hs_code }}</div>
+                <div class="text-sm text-gray-600">{{ usResult.best_guess.description }}</div>
+              </div>
+              <div class="text-right shrink-0 ml-3">
+                <div class="text-lg font-bold text-green-700">{{ Math.round(usResult.best_guess.confidence * 100) }}%</div>
+                <div class="text-xs text-gray-400">confidence</div>
+              </div>
+            </div>
+            <div v-if="usResult.best_guess.matched_keywords?.length" class="mt-2 flex flex-wrap gap-1">
+              <span v-for="k in usResult.best_guess.matched_keywords" :key="k" class="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs">{{ k }}</span>
+            </div>
+          </div>
+          <!-- Keywords -->
+          <div v-if="usResult.extracted_keywords?.length" class="flex flex-wrap gap-1">
+            <span class="text-xs text-gray-400 mr-1">Keywords:</span>
+            <span v-for="k in usResult.extracted_keywords" :key="k" class="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">{{ k }}</span>
+          </div>
+          <!-- All Candidates -->
+          <div v-if="usResult.candidates?.length > 1" class="border rounded overflow-hidden">
+            <div class="text-xs font-semibold text-gray-500 px-3 py-1.5 bg-gray-50 border-b">All Candidates</div>
+            <div v-for="(c, ci) in usResult.candidates" :key="ci" class="px-3 py-2 flex justify-between items-center" :class="ci % 2 === 0 ? 'bg-white' : 'bg-gray-50'">
+              <div>
+                <span class="font-mono text-sm font-bold">{{ c.code }}</span>
+                <span class="text-xs text-gray-500 ml-2">{{ c.description?.substring(0, 60) }}{{ c.description?.length > 60 ? '...' : '' }}</span>
+              </div>
+              <span class="text-xs font-bold text-blue-600">{{ Math.round(c.confidence * 100) }}%</span>
             </div>
           </div>
         </div>
@@ -245,58 +274,87 @@
       <div class="bg-white rounded-lg shadow border p-4">
         <h2 class="text-lg font-semibold mb-3">US Compliance Check</h2>
         <div v-for="(item, idx) in usItems" :key="idx" class="border rounded p-3 mb-2 bg-gray-50">
-          <div class="grid grid-cols-4 gap-2 mb-2">
-            <div>
-              <label class="text-xs text-gray-500">Description *</label>
-              <input v-model="item.raw_description" type="text" class="w-full border rounded px-2 py-1 text-sm" />
+          <div class="flex gap-2 mb-2 items-end">
+            <div class="flex flex-col gap-1 flex-1">
+              <label class="text-xs text-gray-500">Product Description *</label>
+              <input v-model="item.raw_description" type="text" class="w-full border rounded px-2 py-1 text-sm" placeholder="e.g. Lithium Battery Pack" />
             </div>
-            <div>
-              <label class="text-xs text-gray-500">HS Code *</label>
-              <input v-model="item.hs_code" type="text" class="w-full border rounded px-2 py-1 text-sm" />
+            <div class="flex flex-col gap-1 w-40">
+              <label class="text-xs text-gray-500">HTS Code *</label>
+              <input v-model="item.hs_code" type="text" class="w-full border rounded px-2 py-1 text-sm" placeholder="85076000" />
             </div>
-            <div>
+            <div class="flex flex-col gap-1 w-32">
               <label class="text-xs text-gray-500">Value (USD)</label>
-              <input v-model.number="item.declared_value_usd" type="number" class="w-full border rounded px-2 py-1 text-sm" />
+              <input v-model.number="item.declared_value_usd" type="number" class="w-full border rounded px-2 py-1 text-sm" placeholder="100" />
             </div>
-            <div>
-              <label class="text-xs text-gray-500">Weight (lbs)</label>
-              <input v-model.number="item.weight_lbs" type="number" class="w-full border rounded px-2 py-1 text-sm" />
-            </div>
+            <button v-if="usItems.length > 1" @click="usItems.splice(idx, 1)" class="text-red-500 text-xs shrink-0 mb-1">Remove</button>
           </div>
-          <div class="grid grid-cols-3 gap-2 mb-2">
-            <div>
-              <label class="text-xs text-gray-500">L (in)</label>
-              <input v-model.number="item.length_in" type="number" class="w-full border rounded px-2 py-1 text-sm" />
-            </div>
-            <div>
-              <label class="text-xs text-gray-500">W (in)</label>
-              <input v-model.number="item.width_in" type="number" class="w-full border rounded px-2 py-1 text-sm" />
-            </div>
-            <div>
-              <label class="text-xs text-gray-500">H (in)</label>
-              <input v-model.number="item.height_in" type="number" class="w-full border rounded px-2 py-1 text-sm" />
-            </div>
-          </div>
-          <button v-if="usItems.length > 1" @click="usItems.splice(idx, 1)" class="text-red-500 text-xs">Remove</button>
         </div>
-        <div class="flex gap-2">
-          <button @click="usItems.push({ raw_description: '', hs_code: '', declared_value_usd: 0, weight_lbs: undefined, length_in: undefined, width_in: undefined, height_in: undefined })" class="px-3 py-1 border rounded text-xs hover:bg-gray-100">+ Add Item</button>
+        <div class="flex gap-2 mb-4">
+          <button @click="usItems.push({ raw_description: '', hs_code: '', declared_value_usd: 0 })" class="px-3 py-1 border rounded text-xs hover:bg-gray-100">+ Add Item</button>
           <button @click="doUsCompliance" :disabled="usChecking" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50">
             {{ usChecking ? 'Checking...' : 'Check' }}
           </button>
         </div>
-        <p v-if="usError" class="text-red-500 text-sm mt-2">{{ usError }}</p>
-        <div v-if="usCompResults.length" class="mt-3 space-y-2">
-          <div v-for="(r, idx) in usCompResults" :key="idx" class="border rounded p-2 text-sm" :class="r.passed ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'">
-            <div class="flex justify-between">
-              <span class="font-medium">{{ r.raw_description }}</span>
-              <span :class="r.passed ? 'text-green-700' : 'text-red-700'">{{ r.passed ? 'Passed' : 'Review' }}</span>
-            </div>
-            <div class="text-xs text-gray-500">HS: {{ r.hs_code }} | Value: ${{ r.declared_value_usd }}</div>
-            <div v-if="r.warnings?.length" class="mt-1">
-              <div v-for="w in r.warnings" :key="w.check" class="text-xs" :class="w.level === 'blocked' ? 'text-red-600' : w.level === 'restricted' ? 'text-orange-600' : 'text-yellow-600'">
-                {{ w.message }}
+        <p v-if="usError" class="text-red-500 text-sm mb-2">{{ usError }}</p>
+        <div v-if="usCompResults.length" class="space-y-2">
+          <div v-for="(r, idx) in usCompResults" :key="idx" class="border rounded overflow-hidden">
+            <div class="px-3 py-2 flex justify-between items-center" :class="r.passed ? 'bg-green-50' : 'bg-red-50'">
+              <div>
+                <span class="font-medium text-sm">{{ r.raw_description }}</span>
+                <span class="text-xs text-gray-500 ml-2">HS: {{ r.hs_code }} | ${{ r.declared_value_usd }}</span>
               </div>
+              <span class="px-2 py-0.5 rounded text-xs font-medium" :class="r.passed ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'">{{ r.passed ? 'PASS' : 'REVIEW' }}</span>
+            </div>
+            <div v-if="r.warnings?.length" class="px-3 py-2">
+              <div v-for="(w, wi) in r.warnings" :key="wi" class="flex gap-2 py-0.5 text-sm">
+                <span class="inline-block px-1 py-0 rounded text-xs font-medium shrink-0 mt-0.5" :class="wb(w.level)">{{ w.level }}</span>
+                <span>{{ w.message }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- USA Acceptance Check (carrier weight/dim) -->
+      <div class="bg-white rounded-lg shadow border p-4">
+        <h2 class="text-lg font-semibold mb-3">US Acceptance Check (Carrier)</h2>
+        <p class="text-xs text-gray-500 mb-3">Optional: check USPS/FedEx/UPS carrier limits by weight and dimensions.</p>
+        <div v-for="(item, idx) in usAcceptItems" :key="idx" class="border rounded p-3 mb-2 bg-gray-50">
+          <div class="flex gap-2 items-end">
+            <div class="flex flex-col gap-1 w-24">
+              <label class="text-xs text-gray-500">Weight (lbs)</label>
+              <input v-model.number="item.weight_lbs" type="number" class="w-full border rounded px-2 py-1 text-sm" />
+            </div>
+            <div class="flex flex-col gap-1 w-20">
+              <label class="text-xs text-gray-500">L (in)</label>
+              <input v-model.number="item.length_in" type="number" class="w-full border rounded px-2 py-1 text-sm" />
+            </div>
+            <div class="flex flex-col gap-1 w-20">
+              <label class="text-xs text-gray-500">W (in)</label>
+              <input v-model.number="item.width_in" type="number" class="w-full border rounded px-2 py-1 text-sm" />
+            </div>
+            <div class="flex flex-col gap-1 w-20">
+              <label class="text-xs text-gray-500">H (in)</label>
+              <input v-model.number="item.height_in" type="number" class="w-full border rounded px-2 py-1 text-sm" />
+            </div>
+            <button v-if="usAcceptItems.length > 1" @click="usAcceptItems.splice(idx, 1)" class="text-red-500 text-xs shrink-0 mb-1">Remove</button>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button @click="usAcceptItems.push({ weight_lbs: undefined, length_in: undefined, width_in: undefined, height_in: undefined })" class="px-3 py-1 border rounded text-xs hover:bg-gray-100">+ Add Item</button>
+          <button @click="doUsAcceptCheck" :disabled="usAcceptLoading" class="px-4 py-1.5 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 disabled:opacity-50">
+            {{ usAcceptLoading ? 'Checking...' : 'Check Limits' }}
+          </button>
+        </div>
+        <div v-if="usAcceptResults.length" class="mt-3 space-y-2">
+          <div v-for="(r, idx) in usAcceptResults" :key="idx" class="border rounded p-2 text-sm" :class="r.passed ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'">
+            <div class="flex justify-between">
+              <span class="font-medium">{{ r.weight_lbs }}lbs / {{ r.length_in }}"x{{ r.width_in }}"x{{ r.height_in }}"</span>
+              <span :class="r.passed ? 'text-green-700' : 'text-red-700'">{{ r.passed ? 'Within Limits' : 'Over Limits' }}</span>
+            </div>
+            <div v-if="r.warnings?.length" class="mt-1">
+              <div v-for="w in r.warnings" :key="w.check" class="text-xs text-yellow-700">{{ w.message }}</div>
             </div>
             <div v-if="r.carrier_restrictions" class="mt-1 text-xs text-gray-500">
               <div v-if="r.carrier_restrictions.usps?.length">USPS: {{ r.carrier_restrictions.usps[0] }}</div>
@@ -393,10 +451,6 @@ interface UsItem {
   raw_description: string;
   hs_code: string;
   declared_value_usd: number;
-  weight_lbs?: number;
-  length_in?: number;
-  width_in?: number;
-  height_in?: number;
 }
 
 const usItems = reactive<UsItem[]>([
@@ -404,6 +458,19 @@ const usItems = reactive<UsItem[]>([
 ]);
 const usCompResults = ref<any[]>([]);
 const usChecking = ref(false);
+
+// Acceptance check
+interface AcceptItem {
+  weight_lbs?: number;
+  length_in?: number;
+  width_in?: number;
+  height_in?: number;
+}
+const usAcceptItems = reactive<AcceptItem[]>([
+  { weight_lbs: undefined, length_in: undefined, width_in: undefined, height_in: undefined },
+]);
+const usAcceptResults = ref<any[]>([]);
+const usAcceptLoading = ref(false);
 
 async function doUsClassify() {
   if (!usDesc.value.trim()) return;
@@ -430,5 +497,34 @@ async function doUsCompliance() {
     usError.value = e?.response?.data?.message || e?.message || "Check failed";
   }
   usChecking.value = false;
+}
+
+async function doUsAcceptCheck() {
+  const valid = usAcceptItems.filter((i) => i.weight_lbs && i.length_in && i.width_in && i.height_in);
+  if (valid.length === 0) { usError.value = "Fill weight and dimensions for at least one item"; return; }
+  usAcceptLoading.value = true;
+  try {
+    const res = await api.post("/us/compliance/check", {
+      items: valid.map(i => ({
+        raw_description: "Package",
+        hs_code: "00000000",
+        declared_value_usd: 1,
+        weight_lbs: i.weight_lbs,
+        length_in: i.length_in,
+        width_in: i.width_in,
+        height_in: i.height_in,
+      }))
+    });
+    usAcceptResults.value = res.data.results.map((r: any) => ({
+      ...r,
+      weight_lbs: valid[0]?.weight_lbs,
+      length_in: valid[0]?.length_in,
+      width_in: valid[0]?.width_in,
+      height_in: valid[0]?.height_in,
+    }));
+  } catch (e: any) {
+    usError.value = e?.response?.data?.message || e?.message || "Check failed";
+  }
+  usAcceptLoading.value = false;
 }
 </script>
