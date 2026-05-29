@@ -230,6 +230,7 @@ router.post("/jp/cleanse/address/download", (req: Request, res: Response) => {
 
       // For modified rows, use the correction as the full street detail
       const streetDetail = isModified ? r.correction : r.validatedStreet;
+      const correctedZip = r.validatedZip || r.zip || "";
       // Full Japanese address: only add 日本、〒 prefix for modified/unverified
       const fullAddrDetail = isModified || !isVerified
         ? `日本、〒${correctedZip} ${r.correction || r.validatedFull || ""}`
