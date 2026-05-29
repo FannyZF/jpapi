@@ -231,11 +231,11 @@ router.post("/jp/cleanse/address/download", (req: Request, res: Response) => {
       const isModified = !!r._modified;
       const isVerified = r.status === "verified";
       const statusLabel = isModified ? "✓ 已修改" : isVerified ? "✓ VERIFIED" : "⚠ UNVERIFIED";
-      const correctedZip = r.validatedZip || r.zip || "";
+      const correctedZip = formatZipcodeDisplay(r.validatedZip || r.zip || "");
 
       const fullAddrDetail = isModified || !isVerified
         ? `日本、〒${correctedZip} ${r.correction || r.validatedFull || ""}`
-        : (r.validatedFull || "");
+        : `〒${correctedZip} ${r.validatedFull || ""}`;
 
       output.push([
         r.tracking || "",
@@ -259,5 +259,11 @@ router.post("/jp/cleanse/address/download", (req: Request, res: Response) => {
     res.status(500).json({ status: "error", message: "Download failed", details: String(err) });
   }
 });
+
+function formatZipcodeDisplay(zip: string): string {
+  const cleaned = zip.replace(/[^\d]/g, "");
+  if (cleaned.length === 7) return cleaned.slice(0, 3) + "-" + cleaned.slice(3);
+  return zip;
+}
 
 export default router;
