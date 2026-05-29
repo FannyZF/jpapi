@@ -16,6 +16,7 @@ import { createRateLimiter } from "./core/rateLimiter";
 import { logger } from "./core/logger";
 
 import addressCleanseRouter from "./api/v1/address.cleanse";
+import addressUploadRouter from "./api/v1/address.upload";
 import nameCleanseRouter from "./api/v1/name.cleanse";
 import itemCleanseRouter from "./api/v1/item.cleanse";
 import statisticsRouter from "./api/v1/statistics";
@@ -70,6 +71,7 @@ app.use("/api/v1", classifyRouter);
 app.use("/api/v1/cleanse", addressCleanseRouter);
 app.use("/api/v1/cleanse", nameCleanseRouter);
 app.use("/api/v1/cleanse", itemCleanseRouter);
+app.use("/api/v1", addressUploadRouter);
 app.use("/api/v1/jp", complianceRouter);
 app.use("/api/v1/jp", classifyRouter);
 app.use("/api/v1/jp/cleanse", addressCleanseRouter);

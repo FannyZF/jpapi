@@ -7,6 +7,26 @@ import type { AddressCleanseResponse } from "../schemas/address";
 type Source = "live" | "cache" | "fallback";
 type AddressServiceResult = AddressCleanseResponse["data"] & { source: Source };
 
+export interface SplitAddress {
+  prefecture: string;
+  city: string;
+  ward: string;
+  street: string;
+}
+
+export function splitAddressComponents(components: Record<string, string>, roomNumber?: string): SplitAddress | null {
+  if (!components || Object.keys(components).length === 0) return null;
+  const prefecture = components.administrative_area_level_1 || "";
+  const city = components.locality || "";
+  const ward = components.sublocality_level_1 || components.ward || "";
+  const route = components.route || "";
+  const streetNum = components.street_number || components.premise || "";
+  let street = [route, streetNum].filter(Boolean).join(" ");
+  if (roomNumber && street) street += " " + roomNumber;
+  if (!prefecture && !city && !ward && !street) return null;
+  return { prefecture, city, ward, street };
+}
+
 function isPlaceholderKey(key: string): boolean {
   return !key || key.startsWith("placeholder") || key.length < 20;
 }

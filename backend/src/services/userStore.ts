@@ -25,6 +25,7 @@ const ALL_PERMISSIONS = [
   "compliance",
   "classify",
   "admin",
+  "address_operator",
 ];
 
 export function getAllPermissions(): string[] {

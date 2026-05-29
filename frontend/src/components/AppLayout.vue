@@ -11,6 +11,9 @@
         <router-link to="/compliance" class="block px-3 py-2 rounded hover:bg-slate-700 transition-colors" active-class="bg-slate-700">
           Compliance
         </router-link>
+        <router-link to="/address-upload" class="block px-3 py-2 rounded hover:bg-slate-700 transition-colors" active-class="bg-slate-700">
+          Address Cleanse
+        </router-link>
         <router-link to="/billing" class="block px-3 py-2 rounded hover:bg-slate-700 transition-colors" active-class="bg-slate-700">
           Billing
         </router-link>

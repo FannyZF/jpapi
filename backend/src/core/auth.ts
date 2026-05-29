@@ -32,6 +32,8 @@ const ROUTE_PERMISSIONS: Record<string, string> = {
   "POST /us/classify": "classify",
   "POST /us/cleanse/address": "address",
   "POST /us/compliance/check": "compliance",
+  "POST /cleanse/address/upload": "address_operator",
+  "POST /address/upload": "address_operator",
 };
 
 function getRequiredPermission(method: string, path: string): string | null {

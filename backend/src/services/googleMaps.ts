@@ -103,6 +103,7 @@ async function validateAddress(
 export interface GoogleMapsCombinedResult {
   address: AddressResult;
   postalCode: string;
+  components: Record<string, string>;
   source?: "cache" | "live";
 }
 
@@ -140,6 +141,7 @@ export async function fetchGoogleMaps(
         english_address: enResult?.formattedAddress || rawAddress,
       },
       postalCode: jaResult?.postalCode || enResult?.postalCode || "",
+      components: jaResult?.components || enResult?.components || {},
     };
 
     // Only cache high-quality results: SUB_PREMISE, PREMISE, STREET_ADDRESS
