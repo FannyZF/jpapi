@@ -90,7 +90,11 @@
                 </td>
                 <td class="px-3 py-2 text-xs max-w-48 truncate" :title="r.validatedFull">{{ r.validatedFull || r.validatedBase || '—' }}</td>
                 <td class="px-3 py-2">
-                  <input v-if="r.status !== 'verified'" v-model="r.correction" class="border rounded px-2 py-1 text-xs w-full" />
+                  <div v-if="r.status !== 'verified'" class="flex gap-1">
+                    <input v-model="r.correction" class="border rounded px-2 py-1 text-xs flex-1 w-40" />
+                    <button @click="saveCorrection(idx)" class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 shrink-0">保存</button>
+                    <span v-if="r._saved" class="text-green-600 text-xs self-center shrink-0">已保存</span>
+                  </div>
                   <span v-else class="text-xs text-green-700">{{ r.correction }}</span>
                 </td>
                 <td class="px-3 py-2 text-center">
@@ -191,6 +195,13 @@ function appendSegment(idx: number, seg: string) {
   if (!row) return;
   const sep = row.correction && !row.correction.endsWith("-") ? "-" : "";
   row.correction = (row.correction || "") + sep + seg;
+}
+
+function saveCorrection(idx: number) {
+  const row = rows.value[idx];
+  if (!row) return;
+  row._saved = true;
+  setTimeout(() => { row._saved = false; }, 1500);
 }
 
 async function downloadExcel() {
