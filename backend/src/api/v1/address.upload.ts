@@ -109,11 +109,11 @@ router.post("/jp/cleanse/address/upload", upload.single("file"), async (req: Req
             refId,
           ]);
         } else {
-          // Unverified: split columns use original, full address shows Google's Japanese result
+          // Unverified: use full original address with all dash numbers, split cols = original
           output.push([pref, city, ward, addr, zip,
-            pref, city, ward, addr,           // 验证列也用原始值（英文）
-            fullJaAddress,                     // 日文完整地址（Google 仍会返回日文结果）
-            zip,                               // 邮编用原始值
+            pref, city, ward, addr,
+            fullAddr,                          // 完整原始地址（不剥离任何部分）
+            zip,
             "⚠ UNVERIFIED",
             address.validation_level,
             address.verdict_message || "Address not valid — 需人工核实",
