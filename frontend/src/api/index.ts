@@ -306,11 +306,12 @@ export function updatePricing(pricing: Partial<PricingInfo>) {
   return api.put("/settings/pricing", { pricing });
 }
 
-export function generateInvoice(userId: string, startDate: string, endDate: string) {
+export function generateInvoice(userId: string, startDate: string, endDate: string, country?: string) {
   return api.post<{ status: string; invoice: InvoiceRecord; duplicate?: boolean }>("/billing/generate", {
     user_id: userId,
     start_date: startDate,
     end_date: endDate,
+    country: country || "JP",
   });
 }
 

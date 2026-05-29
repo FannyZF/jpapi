@@ -14,6 +14,7 @@ export interface User {
   company_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  countries: string[];
 }
 
 const ALL_PERMISSIONS = [
@@ -32,6 +33,13 @@ export function getAllPermissions(): string[] {
 
 function hashApiKey(key: string): string {
   return crypto.createHash("sha256").update(key).digest("hex");
+}
+
+function parseCountries(raw: unknown): string[] {
+  try {
+    if (typeof raw === "string") return JSON.parse(raw);
+    return ["jp"];
+  } catch { return ["jp"]; }
 }
 
 export function ensureUsersTable(): void {
@@ -61,6 +69,7 @@ export function ensureUsersTable(): void {
   try { db.exec("ALTER TABLE users ADD COLUMN company_name TEXT"); } catch (_e) {}
   try { db.exec("ALTER TABLE users ADD COLUMN contact_email TEXT"); } catch (_e) {}
   try { db.exec("ALTER TABLE users ADD COLUMN contact_phone TEXT"); } catch (_e) {}
+  try { db.exec("ALTER TABLE users ADD COLUMN countries TEXT DEFAULT '[\"jp\"]'"); } catch (_e) {}
 }
 
 function generateApiKey(): string {
@@ -98,7 +107,7 @@ export function getUserByApiKey(apiKey: string): User | null {
   const hash = hashApiKey(apiKey);
   const row = db
     .prepare(
-      "SELECT id, name, permissions, active, created_at, last_used_at, webhook_url, webhook_secret, webhook_enabled, company_name, contact_email, contact_phone FROM users WHERE api_key_hash = ? AND active = 1"
+      "SELECT id, name, permissions, active, created_at, last_used_at, webhook_url, webhook_secret, webhook_enabled, company_name, contact_email, contact_phone, countries FROM users WHERE api_key_hash = ? AND active = 1"
     )
     .get(hash) as Record<string, unknown> | undefined;
   if (!row) return null;
@@ -119,6 +128,7 @@ function rowToUser(row: Record<string, unknown>): User {
     company_name: (row.company_name as string) || null,
     contact_email: (row.contact_email as string) || null,
     contact_phone: (row.contact_phone as string) || null,
+    countries: parseCountries(row.countries),
   };
 }
 
@@ -126,7 +136,7 @@ export function getUserById(id: string): User | null {
   const db = getHistoryDb();
   const row = db
     .prepare(
-      "SELECT id, name, permissions, active, created_at, last_used_at, webhook_url, webhook_secret, webhook_enabled, company_name, contact_email, contact_phone FROM users WHERE id = ?"
+      "SELECT id, name, permissions, active, created_at, last_used_at, webhook_url, webhook_secret, webhook_enabled, company_name, contact_email, contact_phone, countries FROM users WHERE id = ?"
     )
     .get(id) as Record<string, unknown> | undefined;
   if (!row) return null;
@@ -137,7 +147,7 @@ export function listUsers(): User[] {
   const db = getHistoryDb();
   const rows = db
     .prepare(
-      "SELECT id, name, permissions, active, created_at, last_used_at, webhook_url, webhook_secret, webhook_enabled, company_name, contact_email, contact_phone FROM users ORDER BY created_at DESC"
+      "SELECT id, name, permissions, active, created_at, last_used_at, webhook_url, webhook_secret, webhook_enabled, company_name, contact_email, contact_phone, countries FROM users ORDER BY created_at DESC"
     )
     .all() as Record<string, unknown>[];
   return rows.map(rowToUser);
@@ -145,7 +155,7 @@ export function listUsers(): User[] {
 
 export function updateUser(
   id: string,
-  updates: { name?: string; permissions?: string[]; active?: number; webhook_url?: string | null; webhook_enabled?: number; company_name?: string | null; contact_email?: string | null; contact_phone?: string | null }
+  updates: { name?: string; permissions?: string[]; active?: number; webhook_url?: string | null; webhook_enabled?: number; company_name?: string | null; contact_email?: string | null; contact_phone?: string | null; countries?: string[] }
 ): User | null {
   const db = getHistoryDb();
   const existing = getUserById(id);
@@ -173,6 +183,9 @@ export function updateUser(
   }
   if (updates.contact_phone !== undefined) {
     db.prepare(`UPDATE users SET contact_phone = ? WHERE id = ?`).run(updates.contact_phone, id);
+  }
+  if (updates.countries !== undefined) {
+    db.prepare(`UPDATE users SET countries = ? WHERE id = ?`).run(JSON.stringify(updates.countries), id);
   }
 
   return getUserById(id);

@@ -413,8 +413,9 @@ export interface InvoiceRecord {
   generated_at: string;
   total_amount: number;
   paid: number;
-  breakdown: string; // JSON
-  detail_call_ids: string; // JSON array
+  country: string;
+  breakdown: string;
+  detail_call_ids: string;
 }
 
 export interface InvoiceBreakdownItem {
@@ -434,6 +435,9 @@ export const DEFAULT_PRICING: Record<string, number> = {
   item: 0.20,
   classify: 0.30,
   compliance: 0.20,
+  us_classify: 0.30,
+  us_address: 0.15,
+  us_compliance: 0.25,
 };
 
 export const DEFAULT_COMPANY = {
@@ -460,6 +464,7 @@ export function ensureInvoicesTable(): void {
       generated_at TEXT NOT NULL,
       total_amount REAL NOT NULL,
       paid INTEGER DEFAULT 0,
+      country TEXT DEFAULT 'JP',
       breakdown TEXT NOT NULL,
       detail_call_ids TEXT NOT NULL
     )
@@ -471,6 +476,7 @@ export function ensureInvoicesTable(): void {
     CREATE INDEX IF NOT EXISTS idx_invoices_generated_at ON invoices(generated_at)
   `);
   try { db.exec("ALTER TABLE invoices ADD COLUMN paid INTEGER DEFAULT 0"); } catch (_e) {}
+  try { db.exec("ALTER TABLE invoices ADD COLUMN country TEXT DEFAULT 'JP'"); } catch (_e) {}
 }
 
 function generateBillNumber(userName: string): string {
@@ -488,6 +494,7 @@ export function generateInvoice(params: {
   contact_phone?: string | null;
   start_date: string;
   end_date: string;
+  country: string;
   pricing: Record<string, number>;
 }): InvoiceRecord {
   const db = getHistoryDb();
@@ -533,22 +540,14 @@ export function generateInvoice(params: {
   const generatedAt = new Date().toISOString();
 
   db.prepare(`
-    INSERT INTO invoices (id, bill_number, user_id, user_name, company_name, contact_email, contact_phone, period_start, period_end, generated_at, total_amount, breakdown, detail_call_ids)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO invoices (id, bill_number, user_id, user_name, company_name, contact_email, contact_phone, period_start, period_end, generated_at, total_amount, paid, country, breakdown, detail_call_ids)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    invoiceId,
-    billNumber,
-    params.user_id,
-    params.user_name,
-    params.company_name || null,
-    params.contact_email || null,
-    params.contact_phone || null,
-    params.start_date,
-    params.end_date,
-    generatedAt,
-    totalAmount,
-    JSON.stringify(breakdown),
-    JSON.stringify(logIds.map((r) => r.id))
+    invoiceId, billNumber, params.user_id, params.user_name,
+    params.company_name || null, params.contact_email || null,
+    params.contact_phone || null, params.start_date, params.end_date,
+    generatedAt, totalAmount, 0, params.country,
+    JSON.stringify(breakdown), JSON.stringify(logIds.map((r) => r.id))
   );
 
   return getInvoice(invoiceId)!;
@@ -568,6 +567,7 @@ function rowToInvoice(row: Record<string, unknown>): InvoiceRecord {
     generated_at: row.generated_at as string,
     total_amount: row.total_amount as number,
     paid: (row.paid as number) || 0,
+    country: (row.country as string) || "JP",
     breakdown: row.breakdown as string,
     detail_call_ids: row.detail_call_ids as string,
   };
@@ -710,11 +710,14 @@ export function generateInvoicePdf(
   let rowY = doc.y;
   doc.fontSize(9).font(font);
   const endpointNames: Record<string, string> = {
-    address: "地址清洗",
-    name: "姓名清洗",
-    item: "商品清洗",
-    classify: "HS编码分类",
-    compliance: "合规检查",
+    address: "JP-地址清洗",
+    name: "JP-姓名清洗",
+    item: "JP-商品清洗",
+    classify: "JP-HS分类",
+    compliance: "JP-合规检查",
+    us_classify: "US-HS分类",
+    us_address: "US-地址清洗",
+    us_compliance: "US-合规检查",
   };
 
   for (const [key, item] of Object.entries(breakdown)) {

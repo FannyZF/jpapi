@@ -27,6 +27,7 @@ router.get("/users", (_req: Request, res: Response) => {
       company_name: u.company_name,
       contact_email: u.contact_email,
       contact_phone: u.contact_phone,
+      countries: u.countries,
     }));
     res.json({ status: "success", users: safeUsers });
   } catch (err) {
@@ -80,7 +81,7 @@ router.post("/users", (req: Request, res: Response) => {
 
 router.put("/users/:id", (req: Request, res: Response) => {
   try {
-    const { name, permissions, active, webhook_url, webhook_enabled, company_name, contact_email, contact_phone } = req.body;
+    const { name, permissions, active, webhook_url, webhook_enabled, company_name, contact_email, contact_phone, countries } = req.body;
 
     const updates: Record<string, unknown> = {};
     if (name !== undefined) updates.name = name;
@@ -95,6 +96,7 @@ router.put("/users/:id", (req: Request, res: Response) => {
     if (company_name !== undefined) updates.company_name = company_name;
     if (contact_email !== undefined) updates.contact_email = contact_email;
     if (contact_phone !== undefined) updates.contact_phone = contact_phone;
+    if (countries !== undefined) updates.countries = Array.isArray(countries) ? countries : ["jp"];
 
     const user = updateUser(
       req.params.id,

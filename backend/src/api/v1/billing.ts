@@ -172,6 +172,7 @@ const generateInvoiceSchema = z.object({
   user_id: z.string().min(1, "user_id is required"),
   start_date: z.string().min(1, "start_date is required"),
   end_date: z.string().min(1, "end_date is required"),
+  country: z.string().default("JP"),
 });
 
 router.get("/billing/invoices", (req: Request, res: Response) => {
@@ -376,6 +377,7 @@ router.post("/billing/generate", async (req: Request, res: Response) => {
       contact_phone: user.contact_phone,
       start_date: parsed.start_date,
       end_date: parsed.end_date,
+      country: parsed.country,
       pricing: pricingInfo,
     });
 

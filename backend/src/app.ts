@@ -27,6 +27,7 @@ import complianceRouter from "./api/v1/compliance";
 import classifyRouter from "./api/v1/classify";
 import webhookReceiverRouter from "./api/v1/webhookReceiver";
 import healthRouter from "./api/v1/health";
+import usRouter from "./api/v1/us";
 
 export let redisAvailable = false;
 
@@ -62,11 +63,22 @@ app.use("/api/v1", settingsRouter);
 app.use("/api/v1", adminRouter);
 app.use("/api/v1", statisticsRouter);
 app.use("/api/v1", billingRouter);
+
+// JP routes (legacy + new prefix)
 app.use("/api/v1", complianceRouter);
 app.use("/api/v1", classifyRouter);
 app.use("/api/v1/cleanse", addressCleanseRouter);
 app.use("/api/v1/cleanse", nameCleanseRouter);
 app.use("/api/v1/cleanse", itemCleanseRouter);
+app.use("/api/v1/jp", complianceRouter);
+app.use("/api/v1/jp", classifyRouter);
+app.use("/api/v1/jp/cleanse", addressCleanseRouter);
+app.use("/api/v1/jp/cleanse", nameCleanseRouter);
+app.use("/api/v1/jp/cleanse", itemCleanseRouter);
+
+// US routes
+app.use("/api/v1", usRouter);
+
 app.use("/api/v1", cacheRouter);
 
 app.use(globalErrorHandler);

@@ -130,7 +130,10 @@ const endpointLabels: Record<string, string> = {
   name: "姓名清洗 (Name Cleanse)",
   item: "商品清洗 (Item Cleanse)",
   classify: "HS编码分类 (Classify)",
-  compliance: "合规检查 (Compliance)",
+  compliance: "JP-合规检查 (Compliance)",
+  us_classify: "US-HS分类 (Classify)",
+  us_address: "US-地址清洗 (Address)",
+  us_compliance: "US-合规检查 (Compliance)",
 };
 
 const companyForm = reactive({
@@ -139,10 +142,11 @@ const companyForm = reactive({
 
 const pricingInfo = reactive<Record<string, number>>({
   address: 0.10, name: 0.10, item: 0.20, classify: 0.30, compliance: 0.20,
+  us_classify: 0.30, us_address: 0.15, us_compliance: 0.25,
 });
-
 const pricingEdits = reactive<Record<string, number>>({
   address: 0, name: 0, item: 0, classify: 0, compliance: 0,
+  us_classify: 0, us_address: 0, us_compliance: 0,
 });
 
 // === Credentials ===

@@ -86,7 +86,7 @@
                 <input type="checkbox" :value="p" v-model="form.permissions" />
                 {{ p }}
               </label>
-            </div>
+          </div>
           </div>
         </div>
         <div class="flex justify-end gap-3 mt-4">
@@ -138,6 +138,19 @@
           <div>
             <label class="text-sm text-gray-500">联系电话</label>
             <input v-model="editForm.contact_phone" type="text" class="w-full border rounded px-3 py-1.5 text-sm" placeholder="13800138000" />
+          </div>
+          <div>
+            <label class="text-sm text-gray-500">可用国家线路</label>
+            <div class="flex gap-4 mt-1">
+              <label class="flex items-center gap-1 text-sm">
+                <input type="checkbox" value="jp" v-model="editForm.countries" />
+                Japan
+              </label>
+              <label class="flex items-center gap-1 text-sm">
+                <input type="checkbox" value="us" v-model="editForm.countries" />
+                USA
+              </label>
+            </div>
           </div>
         </div>
         <div class="flex justify-end gap-3 mt-4">
@@ -214,6 +227,7 @@ interface UserRow {
   company_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  countries: string[];
 }
 
 const users = ref<UserRow[]>([]);
@@ -228,7 +242,7 @@ const newKeyValue = ref("");
 const editTargetId = ref("");
 
 const form = reactive({ name: "", permissions: [] as string[] });
-const editForm = reactive({ name: "", permissions: [] as string[], webhook_url: "", webhook_secret: "", webhook_enabled: false, company_name: "", contact_email: "", contact_phone: "" });
+const editForm = reactive({ name: "", permissions: [] as string[], webhook_url: "", webhook_secret: "", webhook_enabled: false, company_name: "", contact_email: "", contact_phone: "", countries: ["jp"] as string[] });
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString();
@@ -279,6 +293,7 @@ function editUser(u: UserRow) {
   editForm.company_name = u.company_name || "";
   editForm.contact_email = u.contact_email || "";
   editForm.contact_phone = u.contact_phone || "";
+  editForm.countries = u.countries || ["jp"];
   showEdit.value = true;
 }
 
@@ -292,6 +307,7 @@ async function doUpdate() {
       company_name: editForm.company_name || null,
       contact_email: editForm.contact_email || null,
       contact_phone: editForm.contact_phone || null,
+      countries: editForm.countries,
     });
     showEdit.value = false;
     await loadUsers();

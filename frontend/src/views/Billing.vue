@@ -38,6 +38,13 @@
             <label class="text-sm text-gray-500">结束日期</label>
             <input v-model="genForm.end_date" type="date" class="border rounded px-3 py-1.5 text-sm" />
           </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm text-gray-500">国家线路</label>
+            <select v-model="genForm.country" class="border rounded px-3 py-1.5 text-sm">
+              <option value="JP">Japan</option>
+              <option value="US">USA</option>
+            </select>
+          </div>
           <button
             @click="doGenerate"
             :disabled="generating"
@@ -311,7 +318,7 @@ const logFilters = reactive({
   user_id: "", operation_type: "", start_date: "", end_date: "",
 });
 
-const genForm = reactive({ user_id: "", start_date: "", end_date: "" });
+const genForm = reactive({ user_id: "", start_date: "", end_date: "", country: "JP" });
 const genResult = ref<InvoiceRecord | null>(null);
 const generating = ref(false);
 const invoices = ref<InvoiceRecord[]>([]);
@@ -406,7 +413,7 @@ async function doGenerate() {
   error.value = "";
   genResult.value = null;
   try {
-    const res = await generateInvoice(genForm.user_id, genForm.start_date, genForm.end_date);
+    const res = await generateInvoice(genForm.user_id, genForm.start_date, genForm.end_date, genForm.country);
     genResult.value = res.data.invoice;
     error.value = res.data.duplicate ? "该客户该时间段已出具过账单，返回已有账单。" : "";
     await loadInvoices();

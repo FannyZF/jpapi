@@ -10,15 +10,20 @@ export interface HsCodeMatchResult { matched: boolean; confidence: "exact"|"part
 
 export function ensureHsCodeTable(): void {
   const db = getHistoryDb();
-  if (db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='hs_codes'").get()) return;
-  db.exec("CREATE TABLE hs_codes (code TEXT PRIMARY KEY, section TEXT NOT NULL, description TEXT NOT NULL, parent TEXT, level INTEGER NOT NULL)");
-  db.exec("CREATE INDEX IF NOT EXISTS idx_hs_codes_parent ON hs_codes(parent)");
-  const csvPath = path.resolve(__dirname, "../../data/hs_codes.csv");
-  if (!fs.existsSync(csvPath)) return;
-  const content = fs.readFileSync(csvPath, "utf-8");
-  const lines = content.trim().split("\n"); if (lines.length < 2) return;
-  const insert = db.prepare("INSERT OR IGNORE INTO hs_codes (code, section, description, parent, level) VALUES (?, ?, ?, ?, ?)");
-  db.transaction(() => { for (let i=1; i<lines.length; i++) { const line=lines[i].trim(); if(!line) continue; const parts=line.split(","); if(parts.length<5) continue; insert.run(parts[1], parts[0], parts.slice(2,parts.length-2).join(",").replace(/^\"/,"").replace(/\"$/,""), parts[parts.length-2], String(parseInt(parts[parts.length-1],10))); } })();
+  if (!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='hs_codes'").get()) {
+    db.exec("CREATE TABLE hs_codes (code TEXT, country TEXT DEFAULT 'JP', section TEXT NOT NULL, description TEXT NOT NULL, parent TEXT, level INTEGER NOT NULL, PRIMARY KEY (code, country))");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_hs_codes_parent ON hs_codes(parent)");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_hs_codes_country ON hs_codes(country)");
+    const csvPath = path.resolve(__dirname, "../../data/hs_codes.csv");
+    if (!fs.existsSync(csvPath)) return;
+    const content = fs.readFileSync(csvPath, "utf-8");
+    const lines = content.trim().split("\n"); if (lines.length < 2) return;
+    const insert = db.prepare("INSERT OR IGNORE INTO hs_codes (code, country, section, description, parent, level) VALUES (?, 'JP', ?, ?, ?, ?)");
+    db.transaction(() => { for (let i=1; i<lines.length; i++) { const line=lines[i].trim(); if(!line) continue; const parts=line.split(","); if(parts.length<5) continue; insert.run(parts[1], parts[0], parts.slice(2,parts.length-2).join(",").replace(/^\"/,"").replace(/\"$/,""), parts[parts.length-2], String(parseInt(parts[parts.length-1],10))); } })();
+  }
+  // Migration: add country column if missing
+  try { db.exec("ALTER TABLE hs_codes ADD COLUMN country TEXT DEFAULT 'JP'"); } catch (_e) {}
+  try { db.exec("CREATE INDEX IF NOT EXISTS idx_hs_codes_country ON hs_codes(country)"); } catch (_e) {}
 }
 
 function expandSearchCode(code: string): string[] { const codes=[code]; if(code.length>2)codes.push(code.substring(0,2)); if(code.length>=4)codes.push(code.substring(0,4)); return codes; }

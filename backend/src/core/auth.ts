@@ -29,6 +29,9 @@ const ROUTE_PERMISSIONS: Record<string, string> = {
   "POST /compliance/": "compliance",
   "POST /classify": "classify",
   "POST /classify/": "classify",
+  "POST /us/classify": "classify",
+  "POST /us/cleanse/address": "address",
+  "POST /us/compliance/check": "compliance",
 };
 
 function getRequiredPermission(method: string, path: string): string | null {
@@ -100,6 +103,16 @@ export function authMiddleware(
     res.status(403).json({
       status: "error",
       message: `User does not have permission: ${requiredPerm}`,
+    });
+    return;
+  }
+
+  // Country check: /us/classify → us, /jp/classify → jp, /classify → jp (legacy)
+  const countryPath = path.startsWith("/us/") ? "us" : "jp";
+  if (!user.countries?.includes(countryPath)) {
+    res.status(403).json({
+      status: "error",
+      message: `User does not have access to ${countryPath.toUpperCase()} API`,
     });
     return;
   }
