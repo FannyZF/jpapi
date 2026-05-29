@@ -4,6 +4,7 @@ import crypto from "crypto";
 import * as XLSX from "xlsx";
 import { cleanseAddress, splitAddressComponents } from "../../services/address.service";
 import { fetchGoogleMaps } from "../../services/googleMaps";
+import { fetchZipCloud } from "../../services/zipcloud";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -151,16 +152,31 @@ router.post("/jp/cleanse/address/upload", upload.single("file"), async (req: Req
             correction: fullJa,
           });
         } else {
-          // Try full address for Japanese translation
+          // Blocked/OTHER: use ZipCloud for town name from zipcode
           let jaFull = fullAddr;
           let split: any = null;
           try {
+            // Try Google Maps first with full address
             const fullResult = await fetchGoogleMaps(fullAddr, zip);
             if (fullResult) {
               jaFull = fullResult.address.japanese_address;
               split = splitAddressComponents(fullResult.components, room || undefined);
             }
           } catch { /* use original */ }
+
+          // If OTHER (zip match but address unknown), use ZipCloud for town name
+          if (address.validation_level === "OTHER" || !jaFull || jaFull === fullAddr) {
+            try {
+              const zipData = await fetchZipCloud(zip);
+              if (zipData) {
+                const townName = [zipData.prefecture, zipData.city, zipData.full_address].filter(Boolean).join("");
+                if (townName) {
+                  jaFull = townName;
+                  split = { prefecture: zipData.prefecture, city: zipData.city, ward: "", street: zipData.full_address };
+                }
+              }
+            } catch { /* keep existing */ }
+          }
 
           rows.push({
             refId, pref, city, ward, addr, zip,
