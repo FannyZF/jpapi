@@ -110,16 +110,21 @@ router.post("/jp/cleanse/address/upload", upload.single("file"), async (req: Req
             refId,
           ]);
         } else {
-          // Unverified: try full address for Japanese translation
+          // Unverified: try full address for Japanese translation + split
           let jaFull = fullAddr;
+          let split: { prefecture: string; city: string; ward: string; street: string } | null = null;
           try {
             const fullResult = await fetchGoogleMaps(fullAddr, zip);
             if (fullResult) {
               jaFull = fullResult.address.japanese_address;
+              split = splitAddressComponents(fullResult.components, room || undefined);
             }
           } catch { /* use original */ }
           output.push([pref, city, ward, addr, zip,
-            pref, city, ward, addr,
+            split?.prefecture || pref,
+            split?.city || city,
+            split?.ward || ward,
+            split?.street || addr,
             jaFull,
             zip,
             "⚠ UNVERIFIED",
