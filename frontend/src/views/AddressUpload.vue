@@ -36,6 +36,10 @@
             <label class="text-xs text-gray-500">邮编 (Zipcode) *</label>
             <select v-model="mapping.zipcode" class="border rounded px-2 py-1.5 text-sm"><option value="">-- required --</option><option v-for="h in headers" :key="h" :value="h">{{ h }}</option></select>
           </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-gray-500">运单号 (Tracking)</label>
+            <select v-model="mapping.tracking" class="border rounded px-2 py-1.5 text-sm"><option value="">-- none --</option><option v-for="h in headers" :key="h" :value="h">{{ h }}</option></select>
+          </div>
         </div>
       </div>
 
@@ -66,6 +70,7 @@
             <thead class="bg-gray-50 border-b">
               <tr>
                 <th class="text-left px-3 py-2 w-10">#</th>
+                <th class="text-left px-3 py-2">运单号</th>
                 <th class="text-left px-3 py-2">原始地址</th>
                 <th class="text-left px-3 py-2">提取数字</th>
                 <th class="text-left px-3 py-2">验证后地址</th>
@@ -76,6 +81,7 @@
             <tbody>
               <tr v-for="(r, idx) in rows" :key="idx" class="border-b" :class="r._modified ? 'bg-blue-50' : r.status !== 'verified' ? 'bg-red-50' : 'bg-white'">
                 <td class="px-3 py-2 text-gray-400">{{ idx + 1 }}</td>
+                <td class="px-3 py-2 text-xs font-mono">{{ r.tracking || '—' }}</td>
                 <td class="px-3 py-2 text-xs max-w-48 truncate" :title="r.fullAddr || r.addr">{{ r.fullAddr || r.addr }}</td>
                 <td class="px-3 py-2">
                   <div v-if="r.dashSegments?.length" class="flex flex-wrap gap-1">
@@ -122,7 +128,7 @@ import * as XLSX from "xlsx";
 const fileInput = ref<HTMLInputElement>();
 const fileName = ref("");
 const headers = ref<string[]>([]);
-const mapping = reactive({ prefecture: "", city: "", ward: "", address: "", zipcode: "" });
+const mapping = reactive({ prefecture: "", city: "", ward: "", address: "", zipcode: "", tracking: "" });
 const processing = ref(false);
 const progress = ref(0);
 const totalRows = ref(0);
@@ -139,6 +145,7 @@ const AUTO_MAP: Record<string, string[]> = {
   ward: ["区", "ward", "district", "町", "町域", "cho", "machi", "ku"],
   address: ["具体地址", "address", "住所", "番地", "detail", "street", "address_detail"],
   zipcode: ["邮编", "zip", "zipcode", "郵便番号", "postal_code", "postal"],
+  tracking: ["运单号", "tracking", "運送番号", "追跡番号", "waybill", "tracking_no"],
 };
 
 function onFileChange(e: Event) {
@@ -175,6 +182,7 @@ async function startCleanse() {
   if (mapping.ward) formData.append("ward_col", mapping.ward);
   formData.append("address_col", mapping.address);
   formData.append("zip_col", mapping.zipcode);
+  if (mapping.tracking) formData.append("tracking_col", mapping.tracking);
 
   try {
     const resp = await api.post("/jp/cleanse/address/upload", formData, {
