@@ -24,7 +24,7 @@ export function splitAddressComponents(components: Record<string, string>, roomN
   const streetNum = components.street_number || components.premise || "";
   let street = [subRoute || route, streetNum].filter(Boolean).join(" ");
   if (!street) street = [route, subRoute, streetNum].filter(Boolean).join(" ");
-  if (roomNumber && street) street += " " + roomNumber;
+  if (roomNumber && street) street += "-" + roomNumber;
   if (!prefecture && !city && !ward && !street) return null;
   return { prefecture, city, ward, street };
 }

@@ -94,7 +94,7 @@ router.post("/jp/cleanse/address/upload", upload.single("file"), async (req: Req
         const result = await cleanseAddress(refId, base, zip);
         const address = result.address;
         const components = (result as any).components || {};
-        const fullJaAddress = room ? (address.japanese_address + " " + room) : address.japanese_address;
+        const fullJaAddress = room ? (address.japanese_address + "-" + room) : address.japanese_address;
 
         if (address.is_valid) {
           const split = splitAddressComponents(components, room || undefined);
