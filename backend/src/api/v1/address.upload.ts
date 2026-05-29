@@ -164,21 +164,19 @@ function extractRoomNumberForUpload(address: string): { base: string; room: stri
     if (m) return { base: address.slice(0, m.index).trim().replace(/[、,]\s*$/, ""), room: m[1] };
   }
 
-  // 2. Trailing dash-number segment (Google strips these): "4-15-1-1012"→strip"1012", "3-23-7-207"→strip"207"
-  // Accept if: 3+ digits OR 4+ dash segments
-  const dashParts = address.match(/(\d+[\-–—ー])*\d+$/);
-  if (dashParts) {
-    const lastDash = address.match(/(\d+[‐\-–—ー])+(\d+)$/);
-    if (lastDash) {
-      const lastNum = lastDash[2];
-      const allNums = address.match(/(\d+)(?:[‐\-–—ー](\d+))*/g);
-      const segmentCount = allNums ? allNums[0].split(/[‐\-–—ー]/).length : 1;
-      // Strip if 3+ digits or 4+ segments (likely apartment number)
-      if (lastNum.length >= 3 || segmentCount >= 4) {
-        const base = address.slice(0, lastDash.index).trim().replace(/[‐\-–—ー]\s*$/, "");
-        return { base, room: lastNum };
-      }
-    }
+  // 2. Trailing dash-number: always strip last segment for any dash-connected numbers
+  // Google Maps doesn't validate to building (号) level, so we strip+reattach to preserve
+  const lastDash = address.match(/(\d+[‐\-–—ー])+(\d+)$/);
+  if (lastDash) {
+    const base = address.slice(0, lastDash.index).trim().replace(/[‐\-–—ー]\s*$/, "");
+    return { base, room: lastDash[2] };
+  }
+
+  // 3. Trailing isolated number (3+ digits, likely room/apartment)
+  const trailNum = address.match(/(\d{3,})\s*$/);
+  if (trailNum) {
+    const base = address.slice(0, trailNum.index).trim();
+    return { base, room: trailNum[1] };
   }
 
   return { base: address, room: "" };
