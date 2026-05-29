@@ -4,10 +4,14 @@
 
     <div class="space-y-6">
       <!-- Step 1: File -->
-      <div class="bg-white rounded-lg shadow border p-4">
+      <div class="bg-white rounded-lg shadow border p-6">
         <h2 class="text-lg font-semibold mb-3">1. Select Excel File</h2>
-        <input type="file" accept=".xlsx,.xls" @change="onFileChange" ref="fileInput" class="text-sm" />
-        <p class="text-xs text-gray-400 mt-1">Excel must have at minimum columns for address and zipcode</p>
+        <label class="flex flex-col items-center gap-3 p-8 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
+          <svg class="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+          <span class="text-blue-600 font-medium">{{ fileName || 'Click to select .xlsx or .xls file' }}</span>
+          <span v-if="!fileName" class="text-xs text-gray-400">Excel must have at minimum columns for address and zipcode</span>
+          <input type="file" accept=".xlsx,.xls" @change="onFileChange" ref="fileInput" class="hidden" />
+        </label>
       </div>
 
       <!-- Step 2: Column Mapping -->
@@ -55,7 +59,7 @@
       <!-- Step 3: Process -->
       <div v-if="mapping.address && mapping.zipcode" class="bg-white rounded-lg shadow border p-4">
         <h2 class="text-lg font-semibold mb-3">3. Start Cleanse</h2>
-        <button @click="startCleanse" :disabled="processing" class="px-6 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50">
+        <button @click="startCleanse" :disabled="processing" class="w-full py-3 bg-blue-600 text-white rounded-lg text-base font-medium hover:bg-blue-700 disabled:opacity-50">
           {{ processing ? 'Processing...' : 'Start Cleanse' }}
         </button>
 
@@ -86,6 +90,7 @@ import api from "../api";
 import * as XLSX from "xlsx";
 
 const fileInput = ref<HTMLInputElement>();
+const fileName = ref("");
 const headers = ref<string[]>([]);
 const mapping = reactive({
   prefecture: "",
@@ -111,6 +116,7 @@ const AUTO_MAP: Record<string, string[]> = {
 function onFileChange(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (!file) return;
+  fileName.value = file.name;
   const reader = new FileReader();
   reader.onload = (ev) => {
     const wb = XLSX.read(ev.target?.result, { type: "array" });
