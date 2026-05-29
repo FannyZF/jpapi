@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { getHistoryStats } from "../../services/historyStore";
+import { getHistoryStats, getHistoryDb } from "../../services/historyStore";
 import { cacheGet } from "../../services/cache";
 
 const router = Router();
@@ -13,6 +13,18 @@ router.get("/statistics", async (_req: Request, res: Response) => {
     const dbLiveHits = dbStats.by_source["live"] || 0;
     const dbFallbackHits = dbStats.by_source["fallback"] || 0;
     const cacheHitRate = dbTotal > 0 ? Math.round((dbCacheHits / dbTotal) * 10000) / 100 : 0;
+
+    // Country breakdown from api_path
+    let jpCount = 0, usCount = 0;
+    try {
+      const db = getHistoryDb();
+      jpCount = (db.prepare(
+        `SELECT COUNT(*) as cnt FROM api_call_logs WHERE operation_type IN ('address','name','item','classify','compliance') AND api_path NOT LIKE '/api/v1/us/%'`
+      ).get() as any)?.cnt || 0;
+      usCount = (db.prepare(
+        `SELECT COUNT(*) as cnt FROM api_call_logs WHERE api_path LIKE '/api/v1/us/%'`
+      ).get() as any)?.cnt || 0;
+    } catch { /* table might not exist in test env */ }
 
     const sessionTotal =
       (await cacheGet<number>("stats:total_requests")) || 0;
@@ -32,6 +44,7 @@ router.get("/statistics", async (_req: Request, res: Response) => {
         cache_hit_rate: cacheHitRate,
         by_type: dbStats.by_type,
         by_source: dbStats.by_source,
+        by_country: { jp: jpCount, us: usCount },
         session: {
           total: sessionTotal,
           live: sessionLive,

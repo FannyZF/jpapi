@@ -126,10 +126,10 @@ const message = ref("");
 const messageType = ref<"success" | "error">("success");
 
 const endpointLabels: Record<string, string> = {
-  address: "地址清洗 (Address Cleanse)",
-  name: "姓名清洗 (Name Cleanse)",
-  item: "商品清洗 (Item Cleanse)",
-  classify: "HS编码分类 (Classify)",
+  address: "JP-地址清洗 (Address Cleanse)",
+  name: "JP-姓名清洗 (Name Cleanse)",
+  item: "JP-商品清洗 (Item Cleanse)",
+  classify: "JP-HS编码分类 (Classify)",
   compliance: "JP-合规检查 (Compliance)",
   us_classify: "US-HS分类 (Classify)",
   us_address: "US-地址清洗 (Address)",

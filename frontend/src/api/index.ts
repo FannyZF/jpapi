@@ -57,6 +57,7 @@ export interface StatisticsData {
   cache_hit_rate: number;
   by_type: Record<string, number>;
   by_source: Record<string, number>;
+  by_country: { jp: number; us: number };
   session: {
     total: number;
     live: number;
