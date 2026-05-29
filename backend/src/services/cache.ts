@@ -62,6 +62,16 @@ export async function cacheDelete(key: string): Promise<boolean> {
   }
 }
 
+export async function cacheFlushAll(): Promise<boolean> {
+  try {
+    const c = getRedisClient();
+    await c.flushdb();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function cacheIncr(key: string): Promise<number> {
   try {
     const c = getRedisClient();

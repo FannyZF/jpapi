@@ -19,6 +19,12 @@
         >
           Search
         </button>
+        <button
+          @click="clearAll"
+          class="px-4 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+        >
+          Clear All
+        </button>
       </div>
     </div>
 
@@ -85,6 +91,7 @@
 import { ref, onMounted } from "vue";
 import AppLayout from "../components/AppLayout.vue";
 import { fetchCache, deleteCacheEntry, type CacheEntry } from "../api";
+import api from "../api";
 
 const entries = ref<CacheEntry[]>([]);
 const pattern = ref("*");
@@ -101,6 +108,14 @@ async function loadCache() {
   } catch (e) {
     error.value = "Failed to load cache";
   }
+}
+
+async function clearAll() {
+  if (!confirm("Clear all cache entries? This cannot be undone.")) return;
+  try {
+    await api.post("/cache/clear");
+    await loadCache();
+  } catch { error.value = "Failed to clear cache"; }
 }
 
 function confirmDelete(key: string) {

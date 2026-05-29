@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { cacheGet, cacheSet, cacheDelete, cacheScan } from "../../services/cache";
+import { cacheGet, cacheSet, cacheDelete, cacheFlushAll, cacheScan } from "../../services/cache";
 
 const router = Router();
 
@@ -94,6 +94,15 @@ router.delete("/cache/:key", async (req: Request, res: Response) => {
       message: "Failed to delete cache entry",
       details: err instanceof Error ? err.message : String(err),
     });
+  }
+});
+
+router.post("/cache/clear", async (_req: Request, res: Response) => {
+  try {
+    await cacheFlushAll();
+    res.json({ status: "success", message: "All cache cleared" });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: "Failed to clear cache" });
   }
 });
 
