@@ -182,7 +182,7 @@ async function startCleanse() {
       timeout: 120000,
       onUploadProgress: (e) => { if (e.total) progress.value = Math.round((e.loaded / e.total) * 50); },
     });
-    rows.value = resp.data.rows || [];
+    rows.value = (resp.data.rows || []).map((r: any) => ({ ...r, _modified: false }));
     progress.value = 100;
   } catch (e: any) {
     error.value = e?.response?.data?.message || e?.message || "Upload failed";
