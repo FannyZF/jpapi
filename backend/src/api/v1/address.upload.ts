@@ -81,7 +81,7 @@ router.post("/jp/cleanse/address/upload", upload.single("file"), async (req: Req
       const zip = zipIdx >= 0 ? String(row[zipIdx] || "").replace(/[\s\-]/g, "") : "";
 
       if (!addr.trim() || !zip.trim()) {
-        output.push([pref, city, ward, addr, zip, "", "", "", "", "", "unverified", "", "Missing address/zipcode", crypto.randomUUID()]);
+        output.push([pref, city, ward, addr, zip, "", "", "", "", "", "⚠ UNVERIFIED", "", "Missing address/zipcode", crypto.randomUUID()]);
         continue;
       }
 
@@ -103,16 +103,25 @@ router.post("/jp/cleanse/address/upload", upload.single("file"), async (req: Req
             split?.prefecture || "", split?.city || "", split?.ward || "", split?.street || "",
             fullJaAddress,
             correctZip,
-            "verified",
+            "✓ VERIFIED",
             address.validation_level,
             address.verdict_message || "",
             refId,
           ]);
         } else {
-          output.push([pref, city, ward, addr, zip, "", "", "", "", fullJaAddress, "", "unverified", address.validation_level, address.verdict_message || "Address not valid", refId]);
+          // Unverified: keep original input, use full original address
+          output.push([pref, city, ward, addr, zip,
+            pref, city, ward, addr,           // 验证列也用原始值
+            fullAddr,                          // 完整地址用原始值
+            zip,                               // 邮编用原始值
+            "⚠ UNVERIFIED",
+            address.validation_level,
+            address.verdict_message || "Address not valid — 需人工核实",
+            refId,
+          ]);
         }
       } catch {
-        output.push([pref, city, ward, addr, zip, "", "", "", "", "", "", "unverified", "", "Processing error", refId]);
+        output.push([pref, city, ward, addr, zip, pref, city, ward, addr, fullAddr, zip, "⚠ UNVERIFIED", "", "Processing error", refId]);
       }
     }
 
@@ -131,16 +140,36 @@ router.post("/jp/cleanse/address/upload", upload.single("file"), async (req: Req
 });
 
 function extractRoomNumberForUpload(address: string): { base: string; room: string } {
-  // Only strip parts with room suffixes (号室/号/室/F/階/階層)
-  const patterns = [
+  // 1. Room suffix patterns (号室/F/階 etc.)
+  const suffixPatterns = [
     /(\d+[号室階Ff])\s*$/,
     /([A-Za-z]?\d{2,4}[号室階Ff])\s*$/,
     /(\d+[‐\-–—ー]\d+[号室])\s*$/,
   ];
-  for (const p of patterns) {
+  for (const p of suffixPatterns) {
     const m = address.match(p);
     if (m) return { base: address.slice(0, m.index).trim().replace(/[、,]\s*$/, ""), room: m[1] };
   }
+
+  // 2. Trailing dash-number segment (Google strips these): "4-15-1-1012"→strip"1012", "3-23-7-207"→strip"207"
+  // Accept if: 3+ digits OR 4+ dash segments
+  const dashParts = address.match(/(\d+[\-–—ー])*\d+$/);
+  if (dashParts) {
+    const lastDash = address.match(/(\d+[‐\-–—ー])+(\d+)$/);
+    if (lastDash) {
+      const lastNum = lastDash[2];
+      const allNums = address.match(/(\d+)(?:[‐\-–—ー](\d+))*/g);
+      const segmentCount = allNums ? allNums[0].split(/[‐\-–—ー]/).length : 1;
+      // Strip if 3+ digits or 4+ segments (likely apartment number)
+      if (lastNum.length >= 3 || segmentCount >= 4) {
+        const base = address.slice(0, lastDash.index).trim().replace(/[‐\-–—ー]\s*$/, "");
+        return { base, room: lastNum };
+      }
+    }
+  }
+
+  return { base: address, room: "" };
+}
   return { base: address, room: "" };
 }
 
