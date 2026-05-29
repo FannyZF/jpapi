@@ -74,7 +74,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(r, idx) in rows" :key="idx" class="border-b" :class="r.status !== 'verified' ? 'bg-red-50' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'">
+              <tr v-for="(r, idx) in rows" :key="idx" class="border-b" :class="r._modified ? 'bg-blue-50' : r.status !== 'verified' ? 'bg-red-50' : 'bg-white'">
                 <td class="px-3 py-2 text-gray-400">{{ idx + 1 }}</td>
                 <td class="px-3 py-2 text-xs max-w-48 truncate" :title="r.fullAddr || r.addr">{{ r.fullAddr || r.addr }}</td>
                 <td class="px-3 py-2">
@@ -93,13 +93,13 @@
                   <div v-if="r.status !== 'verified'" class="flex gap-1">
                     <input v-model="r.correction" class="border rounded px-2 py-1 text-xs flex-1 w-40" />
                     <button @click="saveCorrection(idx)" class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 shrink-0">保存</button>
-                    <span v-if="r._saved" class="text-green-600 text-xs self-center shrink-0">已保存</span>
+                    <span v-if="r._modified" class="text-blue-600 text-xs self-center shrink-0">已修改</span>
                   </div>
                   <span v-else class="text-xs text-green-700">{{ r.correction }}</span>
                 </td>
                 <td class="px-3 py-2 text-center">
-                  <span :class="r.status === 'verified' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="px-1.5 py-0.5 rounded text-xs font-medium">
-                    {{ r.status === 'verified' ? '✓' : '⚠' }}
+                  <span :class="r._modified ? 'bg-blue-100 text-blue-700' : r.status === 'verified' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="px-1.5 py-0.5 rounded text-xs font-medium">
+                    {{ r._modified ? '已修改' : r.status === 'verified' ? '✓' : '⚠' }}
                   </span>
                 </td>
               </tr>
@@ -200,8 +200,7 @@ function appendSegment(idx: number, seg: string) {
 function saveCorrection(idx: number) {
   const row = rows.value[idx];
   if (!row) return;
-  row._saved = true;
-  setTimeout(() => { row._saved = false; }, 1500);
+  row._modified = true;
 }
 
 async function downloadExcel() {
