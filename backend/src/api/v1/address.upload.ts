@@ -170,7 +170,5 @@ function extractRoomNumberForUpload(address: string): { base: string; room: stri
 
   return { base: address, room: "" };
 }
-  return { base: address, room: "" };
-}
 
 export default router;
