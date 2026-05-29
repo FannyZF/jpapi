@@ -230,11 +230,10 @@ router.post("/jp/cleanse/address/download", (req: Request, res: Response) => {
 
       // For modified rows, use the correction as the full street detail
       const streetDetail = isModified ? r.correction : r.validatedStreet;
-      // Full Japanese address: 日本、〒zip code correction
-      const correctedZip = r.validatedZip || r.zip || "";
-      const fullAddrDetail = isModified
+      // Full Japanese address: only add 日本、〒 prefix for modified/unverified
+      const fullAddrDetail = isModified || !isVerified
         ? `日本、〒${correctedZip} ${r.correction || r.validatedFull || ""}`
-        : `日本、〒${correctedZip} ${r.correction || r.validatedFull || ""}`;
+        : (r.validatedFull || `日本、〒${correctedZip} ${r.validatedFull || ""}`);
 
       output.push([
         r.pref || "", r.city || "", r.ward || "", r.addr || "", r.zip || "",
