@@ -28,6 +28,7 @@ export interface DutyRateRow {
   jp_mfn: number;
   us_mfn: number;
   us_301: number;
+  us_surcharge: number;
   description: string;
 }
 
@@ -48,6 +49,7 @@ export interface JpDutyEstimate extends DutyEstimate {
 export interface UsDutyEstimate extends DutyEstimate {
   base_rate: number;
   section_301: number;
+  additional_tariffs: number;
   total_rate: number;
   mpf: number;
   mpf_note: string;
@@ -95,10 +97,13 @@ export function ensureDutyRatesTable(): void {
       jp_mfn REAL NOT NULL DEFAULT 0,
       us_mfn REAL NOT NULL DEFAULT 0,
       us_301 REAL NOT NULL DEFAULT 0,
+      us_surcharge REAL NOT NULL DEFAULT 0,
       description TEXT DEFAULT '',
       updated_at TEXT NOT NULL
     )
   `);
+  // Migration for existing tables
+  try { db.exec("ALTER TABLE duty_rates ADD COLUMN us_surcharge REAL DEFAULT 0"); } catch (_e) {}
 }
 
 export async function importDutyCsv(): Promise<void> {
@@ -116,7 +121,7 @@ export async function importDutyCsv(): Promise<void> {
   if (lines.length < 2) return;
 
   const insert = db.prepare(
-    "INSERT OR REPLACE INTO duty_rates (hscode, jp_mfn, us_mfn, us_301, description, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+    "INSERT OR REPLACE INTO duty_rates (hscode, jp_mfn, us_mfn, us_301, us_surcharge, description, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
   );
   const now = new Date().toISOString();
 
@@ -131,7 +136,8 @@ export async function importDutyCsv(): Promise<void> {
         parseFloat(cols[1]) || 0,
         parseFloat(cols[2]) || 0,
         parseFloat(cols[3]) || 0,
-        cols[4]?.trim() || "",
+        parseFloat(cols[4]) || 0,  // us_surcharge
+        cols[5]?.trim() || "",
         now,
       );
     }
@@ -192,8 +198,9 @@ export async function estimateUsDuty(
   const priceUsd = Math.max(1, convert("USD", sourceCurrency.toUpperCase(), salePrice, fx.rates));
   const baseRate = row.us_mfn;
   const s301 = row.us_301;
-  const totalRate = Math.round((baseRate + s301) * 10000) / 10000;
-  const dutyVal = Math.round(priceUsd * (baseRate + s301) * 100) / 100;
+  const surcharge = row.us_surcharge;
+  const totalRate = Math.round((baseRate + s301 + surcharge) * 10000) / 10000;
+  const dutyVal = Math.round(priceUsd * (baseRate + s301 + surcharge) * 100) / 100;
   const mpf = Math.max(29.66, Math.round(priceUsd * 0.003464 * 100) / 100);
   const total = Math.round(dutyVal * 100) / 100;
   const exchangeRate = Math.round(convert("USD", sourceCurrency.toUpperCase(), 1, fx.rates) * 10000) / 10000;
@@ -203,6 +210,7 @@ export async function estimateUsDuty(
     estimated_duty: dutyVal,
     base_rate: baseRate,
     section_301: s301,
+    additional_tariffs: surcharge,
     total_rate: totalRate,
     mpf: Math.round(mpf * 100) / 100,
     mpf_note: "MPF is per customs entry: 0.3464% of entered value, min $29.66, max $575.35 per entry",

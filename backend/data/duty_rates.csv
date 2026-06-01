@@ -1,98 +1,98 @@
-hscode,jp_mfn,us_mfn,us_301,description
-01,0.05,0.02,0,章01 - Live animals
-02,0.10,0.05,0,章02 - Meat and edible meat offal
-03,0.05,0.03,0,章03 - Fish/Crustaceans
-04,0.15,0.08,0,章04 - Dairy/Eggs/Honey
-05,0.03,0.02,0,章05 - Products of animal origin
-06,0.03,0.02,0,章06 - Live trees and plants
-07,0.05,0.05,0,章07 - Edible vegetables
-08,0.05,0.05,0,章08 - Edible fruits and nuts
-09,0.05,0.03,0,章09 - Coffee/Tea/Spices
-10,0.05,0.02,0,章10 - Cereals
-11,0.10,0.05,0,章11 - Milling products
-12,0.05,0.03,0,章12 - Oil seeds and grains
-13,0.03,0.02,0,章13 - Lac/gums/resins
-14,0.03,0.02,0,章14 - Vegetable plaiting materials
-15,0.05,0.05,0,章15 - Animal/Vegetable fats and oils
-16,0.10,0.05,0,章16 - Meat/Fish preparations
-17,0.15,0.08,0,章17 - Sugars and confectionery
-18,0.10,0.05,0,章18 - Cocoa and preparations
-19,0.10,0.08,0,章19 - Cereal/Milk preparations
-20,0.10,0.08,0,章20 - Vegetable/Fruit preparations
-21,0.10,0.05,0,章21 - Miscellaneous edible preparations
-22,0.10,0.05,0,章22 - Beverages and spirits
-23,0.05,0.03,0,章23 - Animal feed residues
-24,0.10,0.05,0,章24 - Tobacco
-25,0.02,0.02,0,章25 - Salt/Sulphur/Earths/Stone
-26,0.02,0.02,0,章26 - Ores/Slag/Ash
-27,0.03,0.03,0,章27 - Mineral fuels and oils
-28,0.03,0.03,0,章28 - Inorganic chemicals
-29,0.03,0.03,0,章29 - Organic chemicals
-30,0.02,0.02,0,章30 - Pharmaceutical products
-31,0.02,0.02,0,章31 - Fertilizers
-32,0.05,0.05,0,章32 - Tanning/Dyeing extracts
-33,0.05,0.05,0,章33 - Essential oils/Cosmetics
-34,0.05,0.05,0,章34 - Soap/Detergents
-35,0.05,0.05,0,章35 - Albuminoidal substances
-36,0.05,0.05,0,章36 - Explosives
-37,0.05,0.05,0,章37 - Photographic goods
-38,0.05,0.05,0,章38 - Miscellaneous chemical products
-39,0.04,0.05,0,章39 - Plastics and articles
-40,0.04,0.03,0,章40 - Rubber and articles
-41,0.05,0.05,0,章41 - Raw hides and skins
-42,0.10,0.08,0,章42 - Leather articles/Saddlery
-43,0.10,0.08,0,章43 - Furskins and artificial fur
-44,0.04,0.03,0,章44 - Wood and articles of wood
-45,0.03,0.02,0,章45 - Cork and articles
-46,0.05,0.05,0,章46 - Straw/Esparto articles
-47,0.01,0.01,0,章47 - Wood pulp
-48,0.02,0.02,0,章48 - Paper and paperboard
-49,0.01,0.01,0,章49 - Printed books/Newspapers
-50,0.05,0.05,0,章50 - Silk
-51,0.05,0.05,0,章51 - Wool/Fine animal hair
-52,0.05,0.05,0,章52 - Cotton
-53,0.05,0.05,0,章53 - Other vegetable textile fibers
-54,0.06,0.06,0,章54 - Man-made filaments
-55,0.06,0.06,0,章55 - Man-made staple fibers
-56,0.06,0.06,0,章56 - Wadding/Felt/Nonwovens
-57,0.08,0.06,0,章57 - Carpets
-58,0.08,0.08,0,章58 - Special woven fabrics
-59,0.06,0.06,0,章59 - Impregnated/Coated fabrics
-60,0.08,0.08,0,章60 - Knitted fabrics
-61,0.09,0.12,0.15,章61 - Knitted/Apparel - 301 15%
-62,0.09,0.12,0.15,章62 - Woven apparel - 301 15%
-63,0.08,0.08,0.075,章63 - Made-up textiles - 301 7.5%
-64,0.12,0.15,0.25,章64 - Footwear - 301 25%
-65,0.08,0.06,0.075,章65 - Headgear - 301 7.5%
-66,0.08,0.06,0.075,章66 - Umbrellas 301 7.5%
-67,0.05,0.05,0.075,章67 - Prepared feathers 301 7.5%
-68,0.03,0.03,0,章68 - Stone/Plaster/Cement
-69,0.03,0.05,0.075,章69 - Ceramic products 301 7.5%
-70,0.02,0.05,0.075,章70 - Glass/Glassware 301 7.5%
-71,0.05,0.06,0.075,章71 - Pearls/Precious stones 301 7.5%
-72,0.02,0.02,0.075,章72 - Iron and steel 301 7.5%
-73,0.02,0.02,0.075,章73 - Iron/Steel articles 301 7.5%
-74,0.02,0.02,0,章74 - Copper
-75,0.02,0.02,0,章75 - Nickel
-76,0.03,0.03,0.075,章76 - Aluminum 301 7.5%
-77,0.02,0.02,0,章77 - Reserved
-78,0.02,0.02,0,章78 - Lead
-79,0.02,0.02,0,章79 - Zinc
-80,0.02,0.02,0,章80 - Tin
-81,0.02,0.02,0,章81 - Other base metals
-82,0.03,0.03,0.075,章82 - Tools/Implements 301 7.5%
-83,0.03,0.03,0.075,章83 - Misc base metal articles 301 7.5%
-84,0,0.02,0.075,章84 - Machinery - 301 7.5%
-85,0,0.02,0.075,章85 - Electronics - 301 7.5%
-86,0,0.03,0.25,章86 - Railway vehicles - 301 25%
-87,0.03,0.03,0.075,章87 - Motor vehicles 301 7.5%
-88,0,0.02,0,章88 - Aircraft
-89,0.03,0.03,0.25,章89 - Ships/Boats - 301 25%
-90,0,0.02,0.075,章90 - Precision instruments 301 7.5%
-91,0.05,0.05,0.075,章91 - Clocks/Watches 301 7.5%
-92,0.03,0.03,0.075,章92 - Musical instruments 301 7.5%
-93,0.05,0.03,0,章93 - Arms/Ammunition
-94,0.02,0.03,0.25,章94 - Furniture/Bedding 301 25%
-95,0.03,0.03,0.25,章95 - Toys/Games 301 25%
-96,0.03,0.05,0.075,章96 - Misc manufactured articles 301 7.5%
-97,0,0.02,0.075,章97 - Works of art 301 7.5%
+hscode,jp_mfn,us_mfn,us_301,us_surcharge,description
+01,0.05,0.02,0,0.10,章01 - Live animals
+02,0.10,0.05,0,0.10,章02 - Meat and edible meat offal
+03,0.05,0.03,0,0.10,章03 - Fish/Crustaceans
+04,0.15,0.08,0,0.10,章04 - Dairy/Eggs/Honey
+05,0.03,0.02,0,0.10,章05 - Products of animal origin
+06,0.03,0.02,0,0.10,章06 - Live trees and plants
+07,0.05,0.05,0,0.10,章07 - Edible vegetables
+08,0.05,0.05,0,0.10,章08 - Edible fruits and nuts
+09,0.05,0.03,0,0.10,章09 - Coffee/Tea/Spices
+10,0.05,0.02,0,0.10,章10 - Cereals
+11,0.10,0.05,0,0.10,章11 - Milling products
+12,0.05,0.03,0,0.10,章12 - Oil seeds and grains
+13,0.03,0.02,0,0.10,章13 - Lac/gums/resins
+14,0.03,0.02,0,0.10,章14 - Vegetable plaiting materials
+15,0.05,0.05,0,0.10,章15 - Animal/Vegetable fats and oils
+16,0.10,0.05,0,0.10,章16 - Meat/Fish preparations
+17,0.15,0.08,0,0.10,章17 - Sugars and confectionery
+18,0.10,0.05,0,0.10,章18 - Cocoa and preparations
+19,0.10,0.08,0,0.10,章19 - Cereal/Milk preparations
+20,0.10,0.08,0,0.10,章20 - Vegetable/Fruit preparations
+21,0.10,0.05,0,0.10,章21 - Miscellaneous edible preparations
+22,0.10,0.05,0,0.10,章22 - Beverages and spirits
+23,0.05,0.03,0,0.10,章23 - Animal feed residues
+24,0.10,0.05,0,0.10,章24 - Tobacco
+25,0.02,0.02,0,0.10,章25 - Salt/Sulphur/Earths/Stone
+26,0.02,0.02,0,0.10,章26 - Ores/Slag/Ash
+27,0.03,0.03,0,0.10,章27 - Mineral fuels and oils
+28,0.03,0.03,0,0.10,章28 - Inorganic chemicals
+29,0.03,0.03,0,0.10,章29 - Organic chemicals
+30,0.02,0.02,0,0.10,章30 - Pharmaceutical products
+31,0.02,0.02,0,0.10,章31 - Fertilizers
+32,0.05,0.05,0,0.10,章32 - Tanning/Dyeing extracts
+33,0.05,0.05,0,0.10,章33 - Essential oils/Cosmetics
+34,0.05,0.05,0,0.10,章34 - Soap/Detergents
+35,0.05,0.05,0,0.10,章35 - Albuminoidal substances
+36,0.05,0.05,0,0.10,章36 - Explosives
+37,0.05,0.05,0,0.10,章37 - Photographic goods
+38,0.05,0.05,0,0.10,章38 - Miscellaneous chemical products
+39,0.04,0.05,0,0.10,章39 - Plastics and articles
+40,0.04,0.03,0,0.10,章40 - Rubber and articles
+41,0.05,0.05,0,0.10,章41 - Raw hides and skins
+42,0.10,0.08,0,0.10,章42 - Leather articles/Saddlery
+43,0.10,0.08,0,0.10,章43 - Furskins and artificial fur
+44,0.04,0.03,0,0.10,章44 - Wood and articles of wood
+45,0.03,0.02,0,0.10,章45 - Cork and articles
+46,0.05,0.05,0,0.10,章46 - Straw/Esparto articles
+47,0.01,0.01,0,0.10,章47 - Wood pulp
+48,0.02,0.02,0,0.10,章48 - Paper and paperboard
+49,0.01,0.01,0,0.10,章49 - Printed books/Newspapers
+50,0.05,0.05,0,0.10,章50 - Silk
+51,0.05,0.05,0,0.10,章51 - Wool/Fine animal hair
+52,0.05,0.05,0,0.10,章52 - Cotton
+53,0.05,0.05,0,0.10,章53 - Other vegetable textile fibers
+54,0.06,0.06,0,0.10,章54 - Man-made filaments
+55,0.06,0.06,0,0.10,章55 - Man-made staple fibers
+56,0.06,0.06,0,0.10,章56 - Wadding/Felt/Nonwovens
+57,0.08,0.06,0,0.10,章57 - Carpets
+58,0.08,0.08,0,0.10,章58 - Special woven fabrics
+59,0.06,0.06,0,0.10,章59 - Impregnated/Coated fabrics
+60,0.08,0.08,0,0.10,章60 - Knitted fabrics
+61,0.09,0.12,0.15,0.10,章61 - Knitted/Apparel - 301 15%
+62,0.09,0.12,0.15,0.10,章62 - Woven apparel - 301 15%
+63,0.08,0.08,0.075,0.10,章63 - Made-up textiles - 301 7.5%
+64,0.12,0.15,0.25,0.10,章64 - Footwear - 301 25%
+65,0.08,0.06,0.075,0.10,章65 - Headgear - 301 7.5%
+66,0.08,0.06,0.075,0.10,章66 - Umbrellas 301 7.5%
+67,0.05,0.05,0.075,0.10,章67 - Prepared feathers 301 7.5%
+68,0.03,0.03,0,0.10,章68 - Stone/Plaster/Cement
+69,0.03,0.05,0.075,0.10,章69 - Ceramic products 301 7.5%
+70,0.02,0.05,0.075,0.10,章70 - Glass/Glassware 301 7.5%
+71,0.05,0.06,0.075,0.10,章71 - Pearls/Precious stones 301 7.5%
+72,0.02,0.02,0.075,0.10,章72 - Iron and steel 301 7.5%
+73,0.02,0.02,0.075,0.10,章73 - Iron/Steel articles 301 7.5%
+74,0.02,0.02,0,0.10,章74 - Copper
+75,0.02,0.02,0,0.10,章75 - Nickel
+76,0.03,0.03,0.075,0.10,章76 - Aluminum 301 7.5%
+77,0.02,0.02,0,0.10,章77 - Reserved
+78,0.02,0.02,0,0.10,章78 - Lead
+79,0.02,0.02,0,0.10,章79 - Zinc
+80,0.02,0.02,0,0.10,章80 - Tin
+81,0.02,0.02,0,0.10,章81 - Other base metals
+82,0.03,0.03,0.075,0.10,章82 - Tools/Implements 301 7.5%
+83,0.03,0.03,0.075,0.10,章83 - Misc base metal articles 301 7.5%
+84,0,0.02,0.075,0.10,章84 - Machinery - 301 7.5%
+85,0,0.02,0.075,0.10,章85 - Electronics - 301 7.5%
+86,0,0.03,0.25,0.10,章86 - Railway vehicles - 301 25%
+87,0.03,0.03,0.075,0.10,章87 - Motor vehicles 301 7.5%
+88,0,0.02,0,0.10,章88 - Aircraft
+89,0.03,0.03,0.25,0.10,章89 - Ships/Boats - 301 25%
+90,0,0.02,0.075,0.10,章90 - Precision instruments 301 7.5%
+91,0.05,0.05,0.075,0.10,章91 - Clocks/Watches 301 7.5%
+92,0.03,0.03,0.075,0.10,章92 - Musical instruments 301 7.5%
+93,0.05,0.03,0,0.10,章93 - Arms/Ammunition
+94,0.02,0.03,0.25,0.10,章94 - Furniture/Bedding 301 25%
+95,0.03,0.03,0.25,0.10,章95 - Toys/Games 301 25%
+96,0.03,0.05,0.075,0.10,章96 - Misc manufactured articles 301 7.5%
+97,0,0.02,0.075,0.10,章97 - Works of art 301 7.5%

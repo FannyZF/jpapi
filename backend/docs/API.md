@@ -338,7 +338,8 @@ POST /us/classify
 |------|------|------|
 | `duty.base_rate` | number | 美国 MFN 关税率 |
 | `duty.section_301` | number | Section 301 对华惩罚性附加关税 |
-| `duty.total_rate` | number | 总税率 = MFN + 301 |
+| `duty.additional_tariffs` | number | 其他附加关税（IEEPA 等） |
+| `duty.total_rate` | number | 总税率 = MFN + 301 + additional |
 | `duty.estimated_duty` | number | 预估关税（USD） |
 | `duty.mpf` | number | 货物处理费 MPF（USD） |
 | `duty.total_tax` | number | 总关税 = estimated_duty（不含 MPF） |
