@@ -13,6 +13,7 @@ coverage/
 # Ignore all data directory except essential production files
 data/*
 !data/hs_codes.csv
+!data/duty_rates.csv
 !data/compliance_rules.json
 
 # Dev artifacts

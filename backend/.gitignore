@@ -4,5 +4,6 @@ dist/
 *.db
 data/*
 !data/hs_codes.csv
+!data/duty_rates.csv
 !data/compliance_rules.json
 coverage/
