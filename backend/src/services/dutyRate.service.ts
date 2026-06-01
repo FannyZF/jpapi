@@ -189,7 +189,7 @@ export async function estimateUsDuty(
   if (!row) return null;
 
   const fx = await getFxRates();
-  const priceUsd = convert("USD", sourceCurrency.toUpperCase(), salePrice, fx.rates);
+  const priceUsd = Math.max(1, convert("USD", sourceCurrency.toUpperCase(), salePrice, fx.rates));
   const baseRate = row.us_mfn;
   const s301 = row.us_301;
   const totalRate = Math.round((baseRate + s301) * 10000) / 10000;
