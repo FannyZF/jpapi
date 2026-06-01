@@ -1,79 +1,80 @@
-# Japan Customs API Hub — 客户 API 接口文档
+# Customs API Hub — 客户 API 接口文档
 
-**版本**: 1.0  
+**版本**: 2.0  
 **Base URL**: `http://your-server:port/api/v1`
 
 ---
 
 ## 通用说明
 
-### 请求头 (Request Headers)
+### 请求头
 
 | Header | 必填 | 说明 |
 |--------|------|------|
 | `Content-Type` | 是 | `application/json` |
 | `X-API-Key` | 是 | 由系统管理员分配的唯一 API 密钥，格式 `ch_xxxx...` |
 
-### 通用响应字段
+### 批量请求
 
-所有成功响应均包含：
+所有接口均支持单条和批量两种方式。发送数组 `[{...}, {...}]` 自动识别为批量，上限 100 条。
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `status` | string | `"success"` |
-| `reference_id` | string | 本次请求的唯一标识，可用于追溯 |
+### 数据完整性
+
+每个响应自动包含 `request_hash` 和 `response_hash`（SHA256 指纹），用于争议时验证数据未被篡改。
 
 ### 状态码
 
 | 状态码 | 说明 |
 |--------|------|
 | 200 | 请求成功 |
-| 400 | 请求参数校验失败，详见 `message` 和 `details` |
-| 401 | 缺少 `X-API-Key` 请求头 |
-| 403 | API Key 无效、已停用或无权访问该接口 |
-| 429 | 请求频率超过限制 |
-| 500 | 服务器内部错误 |
+| 400 | 请求参数校验失败 |
+| 401 | 缺少 `X-API-Key` |
+| 403 | Key 无效或无权访问 |
+| 429 | 频率超限 |
+| 500 | 服务器错误 |
 
 ---
 
-## 1. HS 编码分类 (Classify)
+# 一、日本线路 (Japan)
 
-根据产品描述自动匹配最可能的 HS 编码。支持中英文输入，可选 HS 编码验证模式。
+## 1. HS 编码分类
 
 ```
-POST /api/v1/classify
+POST /classify          (兼容旧版)
+POST /jp/classify       (推荐)
 ```
 
 ### 请求参数
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `raw_description` | string | 是 | 产品描述文本，支持中英文，建议包含品牌、材质、功能等关键信息。例如：`SHEIN牌女士纯棉上衣` |
-| `hs_code` | string | 否 | 待验证的 HS 编码。提供后系统会判断该编码是否与描述匹配（验证模式） |
+| `raw_description` | string | 是 | 产品描述（中/英文，建议含品牌、材质、功能） |
+| `hs_code` | string | 否 | 验证模式：提供 HS 编码判断是否匹配 |
 
-### 响应参数（外部 API 用户）
+### 响应参数
 
-系统根据输入语言自动判断返回中文或英文结果。立即返回本地匹配结果，后台 AI 模型异步优化。
+系统根据输入语言自动返回中文或英文结果。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `status` | string | `"success"` |
-| `task_id` | string | 本次分类任务唯一标识 |
-| `suggested_name` | string | 建议品名（与输入语言一致） |
-| `hs_code` | string\|null | 最匹配的 HS 编码，如无匹配则为 null |
-| `description` | string\|null | HS 编码描述（与输入语言一致） |
-| `confidence` | number | 置信度 0~1，越高越可靠 |
+| `task_id` | string | 任务唯一标识 |
+| `suggested_name` | string | 建议品名 |
+| `hs_code` | string\|null | 最匹配的 HS 编码 |
+| `description` | string\|null | HS 编码描述 |
+| `confidence` | number | 置信度 0~1 |
+
+批量响应格式：`{ "status": "success", "results": [...] }`
 
 ### 示例
 
-**请求（中文）**:
 ```json
+POST /jp/classify
 {
   "raw_description": "SHEIN牌女士纯棉上衣"
 }
 ```
 
-**响应（中文）**:
 ```json
 {
   "status": "success",
@@ -81,89 +82,64 @@ POST /api/v1/classify
   "suggested_name": "女装上衣纯棉",
   "hs_code": "61061000",
   "description": "棉制针织或钩编女衬衫",
-  "confidence": 0.85
-}
-```
-
-**请求（英文）**:
-```json
-{
-  "raw_description": "Laptop Computer"
-}
-```
-
-**响应（英文）**:
-```json
-{
-  "status": "success",
-  "task_id": "def456",
-  "suggested_name": "Laptop Computer",
-  "hs_code": "84713000",
-  "description": "Portable automatic data processing machines, weight <= 10kg",
-  "confidence": 0.92
+  "confidence": 0.85,
+  "request_hash": "sha256:8f4d3b2c...",
+  "response_hash": "sha256:7c1e9f6d..."
 }
 ```
 
 ---
 
-### 管理后台额外字段（仅 admin 用户可见）
-
-Admin 用户在调用时会额外获得以下字段用于管理后台展示：
-
-`structured_attributes`、`candidates`、`best_guess`、`consensus`、`extracted_keywords`、`tokens_used`、`poll_id`、`mode` 等。
-
----
-
-## 2. 地址清洗 (Address Cleanse)
-
-标准化日本地址信息，校验邮编与地址匹配。
+## 2. 地址清洗
 
 ```
-POST /api/v1/cleanse/address
+POST /cleanse/address   (兼容旧版)
+POST /jp/cleanse/address (推荐)
 ```
 
 ### 请求参数
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `order_id` | string | 否 | 订单号 / 业务参考编号，未提供时系统自动生成 |
-| `raw_address` | string | 是 | 原始地址文本，支持日语、英语、中文 |
-| `provided_zipcode` | string | 是 | 提供的邮编，如 `160-0023` |
+| `order_id` | string | 否 | 订单号，未提供时系统自动生成 |
+| `raw_address` | string | 是 | 原始地址（日/英/中） |
+| `provided_zipcode` | string | 是 | 邮编 |
 
 ### 响应参数
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `status` | string | `"success"` |
-| `reference_id` | string | 请求唯一标识（订单号或系统生成） |
+| `reference_id` | string | 请求唯一标识 |
 | `data.address.is_valid` | boolean | 地址是否有效 |
-| `data.address.validation_level` | string | 验证精度：`PREMISE`（精确到门牌）、`STREET`（街道级）、`CITY`（城市级） |
-| `data.address.japanese_address` | string | 标准化后的日文地址 |
-| `data.address.english_address` | string | 标准化后的英文地址 |
-| `data.zipcode.match` | boolean | 邮编与地址是否匹配 |
-| `data.zipcode.provided` | string | 用户提供的邮编 |
-| `data.zipcode.suggested_correct` | string\|null | 系统建议的正确邮编（不匹配时返回） |
+| `data.address.validation_level` | string | 验证精度：`PREMISE` / `STREET_ADDRESS` / `LOCALITY` / `OTHER` |
+| `data.address.verdict_level` | string | 寄递建议：`reliable`（可信）/ `trusted`（基本可信）/ `review`（需核实）/ `unreliable`（不可用） |
+| `data.address.verdict_message` | string | 中文提示 |
+| `data.address.japanese_address` | string | 日文地址 |
+| `data.address.english_address` | string | 英文地址 |
+| `data.zipcode.match` | boolean | 邮编是否匹配 |
+| `data.zipcode.suggested_correct` | string\|null | 建议正确邮编 |
 
 ### 示例
 
-**请求**:
 ```json
+POST /jp/cleanse/address
 {
-  "order_id": "SF-2026-001",
+  "order_id": "SF-001",
   "raw_address": "160-0023 东京都新宿区西新宿2-8-1",
   "provided_zipcode": "160-0023"
 }
 ```
 
-**响应**:
 ```json
 {
   "status": "success",
-  "reference_id": "SF-2026-001",
+  "reference_id": "SF-001",
   "data": {
     "address": {
       "is_valid": true,
       "validation_level": "PREMISE",
+      "verdict_level": "reliable",
+      "verdict_message": "地址精确到门牌号，可用于寄递",
       "japanese_address": "東京都新宿区西新宿2丁目8-1",
       "english_address": "2-8-1 Nishishinjuku, Shinjuku City, Tokyo"
     },
@@ -172,51 +148,45 @@ POST /api/v1/cleanse/address
       "provided": "1600023",
       "suggested_correct": null
     }
-  }
+  },
+  "request_hash": "sha256:...",
+  "response_hash": "sha256:..."
 }
 ```
 
 ---
 
-## 3. 姓名清洗 (Name Cleanse)
-
-收件人姓名标准化，支持日语汉字转片假名/罗马字。
+## 3. 姓名清洗
 
 ```
-POST /api/v1/cleanse/name
+POST /cleanse/name      (兼容旧版)
+POST /jp/cleanse/name   (推荐)
 ```
 
 ### 请求参数
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `order_id` | string | 否 | 订单号 / 业务参考编号 |
-| `raw_name` | string | 是 | 原始姓名，支持日语汉字、片假名、英文、中文 |
+| `order_id` | string | 否 | 订单号 |
+| `raw_name` | string | 是 | 姓名（日语/英文/中文） |
 
 ### 响应参数
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `status` | string | `"success"` |
-| `reference_id` | string | 请求唯一标识 |
-| `data.name.original` | string | 原始输入姓名 |
-| `data.name.japanese_katakana` | string | 片假名转换结果（日语姓名时） |
-| `data.name.english_romaji` | string | 罗马字转换结果 |
+| `data.name.original` | string | 原始输入 |
+| `data.name.japanese_katakana` | string | 片假名 |
+| `data.name.english_romaji` | string | 罗马字 |
 
-### 示例
-
-**请求**:
 ```json
-{
-  "raw_name": "山田太郎"
-}
+POST /jp/cleanse/name
+{ "raw_name": "山田太郎" }
 ```
 
-**响应**:
 ```json
 {
   "status": "success",
-  "reference_id": "ref_20260527_a1b2c3d4",
+  "reference_id": "ref_abc",
   "data": {
     "name": {
       "original": "山田太郎",
@@ -229,114 +199,54 @@ POST /api/v1/cleanse/name
 
 ---
 
-## 4. 商品清洗 (Item Cleanse)
-
-验证商品 HS 编码有效性和描述匹配度，同时进行合规检查（违禁品、限制品、价值评估等）。
+## 4. 商品清洗
 
 ```
-POST /api/v1/cleanse/item
+POST /cleanse/item      (兼容旧版)
+POST /jp/cleanse/item   (推荐)
 ```
 
 ### 请求参数
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `order_id` | string | 否 | 订单号 / 业务参考编号 |
-| `raw_description` | string | 是 | 商品原始描述 |
-| `hs_code` | string | 是 | 申报的 HS 编码 |
-| `declared_value_jpy` | number | 是 | 申报价值（日元），必须 > 0 |
+| `order_id` | string | 否 | 订单号 |
+| `raw_description` | string | 是 | 商品描述 |
+| `hs_code` | string | 是 | HS 编码 |
+| `declared_value_jpy` | number | 是 | 申报价值（日元），> 0 |
 
 ### 响应参数
 
-### data.item 字段
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `data.item.hs_code_valid` | boolean | HS 编码是否有效 |
+| `data.item.hs_code_description` | string\|null | HS 编码官方描述 |
+| `data.item.value_assessment` | string | 价值评估：`normal` / `commercial_threshold` |
+| `data.compliance.passed` | boolean | 合规是否通过 |
+| `data.compliance.warnings` | array | 合规警告列表 |
+
+### warnings 元素
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `raw_description` | string | 原始描述 |
-| `cleansed_description` | string | 清洗后的描述 |
-| `hs_code` | string | 申报的 HS 编码 |
-| `hs_code_valid` | boolean | HS 编码是否有效（存在于数据库中） |
-| `hs_code_description` | string\|null | HS 编码对应的官方描述 |
-| `declared_value_jpy` | number | 申报价值 |
-| `value_assessment` | string | 价值评估：`normal` / `commercial_threshold`（超过商业件限额） |
-| `suggested_description` | string\|null | 系统建议的修正描述（匹配度低时） |
-
-### data.compliance 字段
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `passed` | boolean | 是否通过合规检查 |
-| `warnings` | array | 合规警告列表（见下方） |
-
-### data.compliance.warnings 元素
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `level` | string | 严重程度：`passed`（通过）、`warning`（警告）、`restricted`（限制品）、`blocked`（禁止品） |
-| `check` | string | 检查项名称，如 `prohibited_goods`、`commercial_threshold`、`trademark_check` |
-| `category` | string | 检查类别（如有） |
-| `matched_keywords` | array[string] | 触发的关键词（如有） |
+| `level` | string | `passed` / `warning` / `restricted` / `blocked` |
+| `check` | string | 检查项名称 |
 | `message` | string | 详细说明 |
-
-### 示例
-
-**请求**:
-```json
-{
-  "order_id": "SF-2026-002",
-  "raw_description": "Lithium Battery Pack 10000mAh",
-  "hs_code": "85076000",
-  "declared_value_jpy": 5000
-}
-```
-
-**响应**:
-```json
-{
-  "status": "success",
-  "reference_id": "SF-2026-002",
-  "data": {
-    "item": {
-      "raw_description": "Lithium Battery Pack 10000mAh",
-      "cleansed_description": "Lithium Battery Pack 10000mAh",
-      "hs_code": "85076000",
-      "hs_code_valid": true,
-      "hs_code_description": "Lithium-ion accumulators",
-      "declared_value_jpy": 5000,
-      "value_assessment": "normal",
-      "suggested_description": null
-    },
-    "compliance": {
-      "passed": false,
-      "warnings": [
-        {
-          "level": "restricted",
-          "check": "dangerous_goods",
-          "category": "lithium_battery",
-          "matched_keywords": ["lithium", "battery"],
-          "message": "锂电池属于危险品，需符合 UN38.3 检测要求并提供 MSDS"
-        }
-      ]
-    }
-  }
-}
-```
 
 ---
 
-## 5. 合规检查 (Compliance Check)
-
-批量检查多个商品是否符合日本进口规定（违禁品、限制品、商业件阈值、品牌侵权风险等）。
+## 5. 合规检查
 
 ```
-POST /api/v1/compliance/check
+POST /compliance/check      (兼容旧版)
+POST /jp/compliance/check   (推荐)
 ```
 
 ### 请求参数
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `items` | array | 是 | 待检查商品列表，至少 1 个 |
+| `items` | array | 是 | 待检查商品列表（1~100个） |
 
 ### items 元素
 
@@ -344,91 +254,235 @@ POST /api/v1/compliance/check
 |------|------|------|------|
 | `raw_description` | string | 是 | 商品描述 |
 | `hs_code` | string | 是 | HS 编码 |
-| `declared_value_jpy` | number | 是 | 申报价值（日元），必须 > 0 |
+| `declared_value_jpy` | number | 是 | 申报价值（日元） |
 
 ### 响应参数
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `status` | string | `"success"` |
-| `results` | array | 每个商品的合规检查结果 |
-
-### results 元素
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `raw_description` | string | 商品描述 |
-| `hs_code` | string | HS 编码 |
-| `declared_value_jpy` | number | 申报价值 |
-| `compliance.passed` | boolean | 是否通过 |
-| `compliance.warnings` | array | 合规警告（同 item cleanse 的 warnings） |
-
-### 示例
-
-**请求**:
-```json
-{
-  "items": [
-    {
-      "raw_description": "Cotton T-Shirt",
-      "hs_code": "61091000",
-      "declared_value_jpy": 3000
-    },
-    {
-      "raw_description": "Fireworks Gift Box",
-      "hs_code": "36041000",
-      "declared_value_jpy": 8000
-    }
-  ]
-}
-```
-
-**响应**:
 ```json
 {
   "status": "success",
-  "results": [
-    {
-      "raw_description": "Cotton T-Shirt",
-      "hs_code": "61091000",
-      "declared_value_jpy": 3000,
-      "compliance": {
-        "passed": true,
-        "warnings": []
-      }
-    },
-    {
-      "raw_description": "Fireworks Gift Box",
-      "hs_code": "36041000",
-      "declared_value_jpy": 8000,
-      "compliance": {
-        "passed": false,
-        "warnings": [
-          {
-            "level": "blocked",
-            "check": "prohibited_goods",
-            "matched_keywords": ["fireworks", "explosive"],
-            "message": "烟花爆竹属于禁止进口物品"
-          }
-        ]
-      }
-    }
-  ]
+  "results": [{
+    "raw_description": "Cotton T-Shirt",
+    "hs_code": "61091000",
+    "declared_value_jpy": 3000,
+    "compliance": { "passed": true, "warnings": [] }
+  }]
 }
 ```
 
 ---
 
-## 附录：完整的合规检查项
+# 二、美国线路 (US)
 
-| 检查项 | 说明 | 可能的状态 |
-|--------|------|------------|
-| `prohibited_goods` | 日本禁止进口物品检查（武器、毒品、仿制品等） | `blocked` |
-| `restricted_goods` | 限制进口物品检查（锂电池、药品、食品等） | `restricted` |
-| `commercial_threshold` | 商业件价值阈值检查（超过一定金额需正式报关） | `warning` |
-| `cn_trademark_risk` | 中国品牌在日本的商标侵权风险评估 | `warning` |
-| `hs_code_mismatch` | HS 编码与描述匹配度检查 | `warning` |
-| `jp_pharmaceutical` | 日本药事法合规检查（药品、化妆品等） | `restricted` |
-| `jp_food_sanitation` | 日本食品卫生法检查 | `restricted` |
-| `jp_electrical_safety` | 日本电气用品安全法（PSE）检查 | `restricted` |
-| `value_assessment` | 价值合理性评估 | `warning` |
+## 1. HTS 编码分类
+
+```
+POST /us/classify
+```
+
+### 请求参数
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `raw_description` | string | 是 | 产品描述（英文） |
+| `hs_code` | string | 否 | 验证模式：提供编码进行匹配验证 |
+
+### 响应参数
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `mode` | string | `"classify"` / `"verify"` |
+| `suggested_name` | string | 建议品名 |
+| `best_guess` | object\|null | 最佳匹配：`{ hs_code, description, confidence, matched_keywords }` |
+| `candidates` | array | 候选编码列表 |
+| `extracted_keywords` | array | 提取的关键词 |
+
+### 示例
+
+```json
+POST /us/classify
+{ "raw_description": "Laptop Computer" }
+```
+
+```json
+{
+  "status": "success",
+  "mode": "classify",
+  "suggested_name": "Laptop Computer",
+  "best_guess": {
+    "hs_code": "84713000",
+    "description": "Portable automatic data processing machines...",
+    "confidence": 0.92,
+    "matched_keywords": ["computer", "automatic", "processing"]
+  },
+  "candidates": [
+    { "code": "84713000", "description": "...", "confidence": 0.92 },
+    { "code": "84714100", "description": "...", "confidence": 0.45 }
+  ],
+  "extracted_keywords": ["laptop", "computer"]
+}
+```
+
+---
+
+## 2. 地址清洗
+
+```
+POST /us/cleanse/address
+```
+
+### 请求参数
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `order_id` | string | 否 | 订单号 |
+| `raw_address` | string | 是 | 原始地址 |
+| `zipcode` | string | 是 | 邮编 |
+
+### 响应参数
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `is_valid` | boolean | 地址是否有效 |
+| `validation_level` | string | 验证精度 |
+| `verdict` | string | 寄递建议（中文） |
+| `english_address` | string | 标准化英文地址 |
+| `zip_match` | boolean | 邮编是否匹配 |
+| `address_type` | string | **地址类型**：`residential`（住宅）/ `commercial`（商业）/ `unknown` |
+| `warnings` | array | 警告列表（PO Box 等） |
+
+### 示例
+
+```json
+POST /us/cleanse/address
+{ "raw_address": "350 5th Ave, New York, NY", "zipcode": "10118" }
+```
+
+```json
+{
+  "status": "success",
+  "is_valid": true,
+  "validation_level": "PREMISE",
+  "english_address": "350 5th Ave, New York, NY 10118, USA",
+  "zip_match": true,
+  "address_type": "commercial"
+}
+```
+
+### address_type 判定逻辑
+
+| 来源 | 判定 |
+|------|------|
+| USPS DPV `"D"` / CMRA `"Y"` | `commercial` |
+| USPS DPV `"Y"` / `"S"` | `residential` |
+| 文本含 Office/Plaza/LLC 等 | `commercial` |
+| 文本含 Apt/Unit/# 等 | `residential` |
+| 无法判断 | `unknown` |
+
+> 住宅地址可能涉及快递公司的额外派送费用。
+
+---
+
+## 3. 合规检查
+
+```
+POST /us/compliance/check
+```
+
+### 请求参数
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `items` | array | 是 | 待检查商品列表（1~100个） |
+
+### items 元素
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `raw_description` | string | 是 | 商品描述 |
+| `hs_code` | string | 是 | HS/HTS 编码 |
+| `declared_value_usd` | number | 是 | 申报价值（美元） |
+| `weight_lbs` | number | 否 | 重量（磅） |
+| `length_in` | number | 否 | 长（英寸） |
+| `width_in` | number | 否 | 宽（英寸） |
+| `height_in` | number | 否 | 高（英寸） |
+| `address_hint` | string | 否 | 地址提示（用于 PO Box 检测） |
+
+### 响应参数
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `passed` | boolean | 是否通过 |
+| `hs_code_valid` | boolean | HS 编码是否有效 |
+| `warnings` | array | 合规警告 |
+| `carrier_restrictions` | object\|null | 承运限制：`{ usps, fedex, ups }` |
+
+### 示例
+
+```json
+POST /us/compliance/check
+{
+  "items": [{
+    "raw_description": "Lithium Battery Pack",
+    "hs_code": "85076000",
+    "declared_value_usd": 120,
+    "weight_lbs": 5,
+    "length_in": 12, "width_in": 8, "height_in": 4
+  }]
+}
+```
+
+```json
+{
+  "status": "success",
+  "results": [{
+    "raw_description": "Lithium Battery Pack",
+    "hs_code": "85076000",
+    "declared_value_usd": 120,
+    "passed": true,
+    "hs_code_valid": true,
+    "warnings": [{
+      "level": "restricted",
+      "check": "restricted_goods",
+      "message": "锂电池：需符合UN38.3检测，限量运输"
+    }],
+    "carrier_restrictions": null
+  }]
+}
+```
+
+---
+
+## 6. 地址批量上传 (Excel)
+
+```
+POST /jp/cleanse/address/upload    (上传并返回审核表格)
+POST /jp/cleanse/address/download  (下载修正后的Excel)
+```
+
+仅限日本地址。详细格式参见管理后台 `Address Cleanse` 页面上传引导。
+
+---
+
+## 附录
+
+### 日本合规检查项
+
+| 检查项 | 说明 | 状态 |
+|--------|------|------|
+| `prohibited_goods` | 违禁品（武器、毒品、仿制品） | `blocked` |
+| `restricted_goods` | 限制品（锂电池、药品、食品） | `restricted` |
+| `commercial_threshold` | 商业件阈值 | `warning` |
+| `cn_trademark_risk` | 中国品牌侵权风险 | `warning` |
+| `hs_code_mismatch` | HS 编码与描述不匹配 | `warning` |
+
+### 日本地址验证精度
+
+| validation_level | verdict_level | 说明 |
+|------------------|---------------|------|
+| `PREMISE` | `reliable` | 精确到门牌，可用于寄递 |
+| `SUB_PREMISE` | `reliable` | 精确到房间号 |
+| `STREET_ADDRESS` | `trusted` | 街道级，基本可用 |
+| `ROUTE` | `review` | 需核实 |
+| `LOCALITY` | `unreliable` | 精度不足，需核实 |
+| `OTHER` | `unreliable` | 无法匹配，需人工确认 |
