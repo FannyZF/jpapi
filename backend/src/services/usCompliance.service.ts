@@ -107,11 +107,6 @@ export function detectAddressType(
   cmra: string | null | undefined,
   rawAddress: string
 ): "residential" | "commercial" | "unknown" {
-  // 1. USPS: only "D" = firm/commercial record
   if (cmra === "Y" || dpv === "D") return "commercial";
-  // 2. Text heuristic (USPS "Y"/"S" only means valid delivery, not residential)
-  if (/\b(Inc|LLC|Corp|Ltd|Co\b\.?|PO\s*Box|UPS\s+Store|Mail\s+Boxes|Business\s+Park|Industrial|Warehouse|Factory|Office|Plaza|Tower|Center|Blvd|Ave)\b/i.test(rawAddress)
-      && !/\b(Apt|Unit\b\.?|#\d+|Suite\b\.?)\b/i.test(rawAddress)) return "commercial";
-  if (/\b(Apt|Unit\b\.?|#\d+|Suite\b\.?)\b/i.test(rawAddress)) return "residential";
-  return "unknown";
+  return "residential";
 }
