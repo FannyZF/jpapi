@@ -25,12 +25,11 @@ router.post("/us/cleanse/address", async (req: Request, res: Response) => {
         status: "success",
         is_valid: false,
         validation_level: "UNKNOWN",
-        verdict: "需要人工核实",
-        japanese_address: parsed.raw_address,
-        english_address: parsed.raw_address,
+        verdict: "Review needed",
+        formatted_address: parsed.raw_address,
         zip_match: false,
         address_type: detectAddressType(null, null, parsed.raw_address),
-        warnings: [{ level: "warning", message: "Google Maps地址验证失败，请核实地址" }],
+        warnings: [{ level: "warning", message: "Address validation failed — manual review required" }],
       });
       return;
     }
@@ -43,21 +42,20 @@ router.post("/us/cleanse/address", async (req: Request, res: Response) => {
     if (poBox) warnings.push(poBox);
 
     const verdictMap: Record<string, string> = {
-      "PREMISE": "可信，可用于寄递",
-      "SUB_PREMISE": "可信，可用于寄递",
-      "STREET_ADDRESS": "基本可信",
-      "ROUTE": "建议核实，精度不足",
-      "NEIGHBORHOOD": "建议核实，精度不足",
-      "LOCALITY": "需要核实",
+      "PREMISE": "Verified - Safe to ship",
+      "SUB_PREMISE": "Verified - Safe to ship",
+      "STREET_ADDRESS": "Likely valid",
+      "ROUTE": "Review needed - low precision",
+      "NEIGHBORHOOD": "Review needed - low precision",
+      "LOCALITY": "Review needed",
     };
 
     res.json({
       status: "success",
       is_valid: address.is_valid,
       validation_level: address.validation_level,
-      verdict: verdictMap[address.validation_level] || "需要核实",
-      japanese_address: address.japanese_address,
-      english_address: address.english_address,
+      verdict: verdictMap[address.validation_level] || "Review needed",
+      formatted_address: address.english_address,
       zip_match: zipMatch,
       address_type: detectAddressType(result.uspsDpvConfirmation, result.uspsDpvCmra, parsed.raw_address),
       warnings: warnings.length ? warnings : undefined,

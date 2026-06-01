@@ -29,7 +29,7 @@ router.post("/us/compliance/check", async (req: Request, res: Response) => {
       // HS code validation
       const hs = validateUsHscode(item.hs_code);
       if (!hs.valid) {
-        warnings.push({ level: "warning", check: "hs_code", message: "HS编码在数据库中未找到，请核实" });
+        warnings.push({ level: "warning", check: "hs_code", message: "HS code not found in database — please verify" });
       }
 
       // PO Box
