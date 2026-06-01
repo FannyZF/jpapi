@@ -50,6 +50,7 @@ export interface UsDutyEstimate extends DutyEstimate {
   section_301: number;
   total_rate: number;
   mpf: number;
+  mpf_note: string;
   total_tax: number;
 }
 
@@ -194,7 +195,7 @@ export async function estimateUsDuty(
   const totalRate = Math.round((baseRate + s301) * 10000) / 10000;
   const dutyVal = Math.round(priceUsd * (baseRate + s301) * 100) / 100;
   const mpf = Math.max(29.66, Math.round(priceUsd * 0.003464 * 100) / 100);
-  const total = Math.round((dutyVal + mpf) * 100) / 100;
+  const total = Math.round(dutyVal * 100) / 100;
   const exchangeRate = Math.round(convert("USD", sourceCurrency.toUpperCase(), 1, fx.rates) * 10000) / 10000;
 
   return {
@@ -204,6 +205,7 @@ export async function estimateUsDuty(
     section_301: s301,
     total_rate: totalRate,
     mpf: Math.round(mpf * 100) / 100,
+    mpf_note: "MPF is per customs entry: 0.3464% of entered value, min $29.66, max $575.35 per entry",
     total_tax: total,
     currency: "USD",
     source_currency: sourceCurrency.toUpperCase(),

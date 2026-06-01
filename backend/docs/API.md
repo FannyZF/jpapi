@@ -341,7 +341,9 @@ POST /us/classify
 | `duty.total_rate` | number | 总税率 = MFN + 301 |
 | `duty.estimated_duty` | number | 预估关税（USD） |
 | `duty.mpf` | number | 货物处理费 MPF（USD） |
-| `duty.total_tax` | number | 总税费 = 关税 + MPF（USD） |
+| `duty.total_tax` | number | 总关税 = estimated_duty（不含 MPF） |
+| `duty.mpf` | number | MPF 最低值 $29.66（提示参考） |
+| `duty.mpf_note` | string | MPF 收费标准说明 |
 | `duty.currency` | string | `"USD"` |
 | `duty.source_currency` | string | 用户传的币种 |
 | `duty.exchange_rate` | number | 应用的汇率 |
@@ -384,7 +386,8 @@ POST /us/classify
     "total_rate": 0.27,
     "estimated_duty": 3.73,
     "mpf": 29.66,
-    "total_tax": 33.39,
+    "mpf_note": "MPF is per customs entry: 0.3464% of entered value, min $29.66, max $575.35 per entry",
+    "total_tax": 3.73,
     "currency": "USD",
     "source_currency": "CNY",
     "exchange_rate": 0.138,
