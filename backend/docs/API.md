@@ -37,7 +37,7 @@
 
 # 一、日本线路 (Japan)
 
-## 1. HS 编码分类
+## 1. HS 编码分类 (含税金预估)
 
 ```
 POST /classify          (兼容旧版)
@@ -50,10 +50,10 @@ POST /jp/classify       (推荐)
 |------|------|------|------|
 | `raw_description` | string | 是 | 产品描述（中/英文，建议含品牌、材质、功能） |
 | `hs_code` | string | 否 | 验证模式：提供 HS 编码判断是否匹配 |
+| `sale_price` | number | 否 | 商品销售价。传入后自动返回关税/消费税预估 |
+| `currency` | string | 否 | 销售价币种，默认 `CNY`。支持 `CNY` / `JPY` / `USD` |
 
 ### 响应参数
-
-系统根据输入语言自动返回中文或英文结果。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -63,18 +63,28 @@ POST /jp/classify       (推荐)
 | `hs_code` | string\|null | 最匹配的 HS 编码 |
 | `description` | string\|null | HS 编码描述 |
 | `confidence` | number | 置信度 0~1 |
+| `duty` | object\|null | **税金预估（仅传入 `sale_price` 时返回）** |
 
-批量响应格式：`{ "status": "success", "results": [...] }`
+### duty（日本）字段
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `duty.rate` | number | 日本 MFN 关税率 |
+| `duty.estimated_duty` | number | 预估关税（JPY） |
+| `duty.consumption_tax` | number | 预估消费税 10%（JPY） |
+| `duty.total_tax` | number | 总税金 = 关税 + 消费税（JPY） |
+| `duty.currency` | string | `"JPY"` |
+| `duty.source_currency` | string | 用户传的币种 |
+| `duty.exchange_rate` | number | 应用的汇率 |
+| `duty.note` | string | 免责声明 |
 
 ### 示例
 
+**基本分类：**
 ```json
 POST /jp/classify
-{
-  "raw_description": "SHEIN牌女士纯棉上衣"
-}
+{ "raw_description": "SHEIN牌女士纯棉上衣" }
 ```
-
 ```json
 {
   "status": "success",
@@ -82,11 +92,33 @@ POST /jp/classify
   "suggested_name": "女装上衣纯棉",
   "hs_code": "61061000",
   "description": "棉制针织或钩编女衬衫",
-  "confidence": 0.85,
-  "request_hash": "sha256:8f4d3b2c...",
-  "response_hash": "sha256:7c1e9f6d..."
+  "confidence": 0.85
 }
 ```
+
+**含税金预估：**
+```json
+POST /jp/classify
+{ "raw_description": "SHEIN牌女士纯棉上衣", "sale_price": 2000, "currency": "CNY" }
+```
+```json
+{
+  "hs_code": "61061000",
+  "confidence": 0.85,
+  "duty": {
+    "rate": 0.09,
+    "estimated_duty": 3690,
+    "consumption_tax": 4490,
+    "total_tax": 8180,
+    "currency": "JPY",
+    "source_currency": "CNY",
+    "exchange_rate": 20.5,
+    "note": "6位HS级估算，仅供参考，实际以日本海关核定为准"
+  }
+}
+```
+
+> 日本税金 = 关税（CIF × MFN 税率）+ 消费税 10% ×（CIF + 关税）。税率基于中国原产货物适用 WTO 最惠国税率。
 
 ---
 
@@ -274,7 +306,7 @@ POST /jp/compliance/check   (推荐)
 
 # 二、美国线路 (US)
 
-## 1. HTS 编码分类
+## 1. HTS 编码分类 (含税金预估)
 
 ```
 POST /us/classify
@@ -286,6 +318,8 @@ POST /us/classify
 |------|------|------|------|
 | `raw_description` | string | 是 | 产品描述（英文） |
 | `hs_code` | string | 否 | 验证模式：提供编码进行匹配验证 |
+| `sale_price` | number | 否 | 商品销售价。传入后自动返回关税/税费预估 |
+| `currency` | string | 否 | 销售价币种，默认 `CNY`。支持 `CNY` / `JPY` / `USD` |
 
 ### 响应参数
 
@@ -296,14 +330,30 @@ POST /us/classify
 | `best_guess` | object\|null | 最佳匹配：`{ hs_code, description, confidence, matched_keywords }` |
 | `candidates` | array | 候选编码列表 |
 | `extracted_keywords` | array | 提取的关键词 |
+| `duty` | object\|null | **税金预估（仅传入 `sale_price` 时返回）** |
+
+### duty（美国）字段
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `duty.base_rate` | number | 美国 MFN 关税率 |
+| `duty.section_301` | number | Section 301 对华惩罚性附加关税 |
+| `duty.total_rate` | number | 总税率 = MFN + 301 |
+| `duty.estimated_duty` | number | 预估关税（USD） |
+| `duty.mpf` | number | 货物处理费 MPF（USD） |
+| `duty.total_tax` | number | 总税费 = 关税 + MPF（USD） |
+| `duty.currency` | string | `"USD"` |
+| `duty.source_currency` | string | 用户传的币种 |
+| `duty.exchange_rate` | number | 应用的汇率 |
+| `duty.note` | string | 免责声明 |
 
 ### 示例
 
+**基本分类：**
 ```json
 POST /us/classify
 { "raw_description": "Laptop Computer" }
 ```
-
 ```json
 {
   "status": "success",
@@ -315,13 +365,35 @@ POST /us/classify
     "confidence": 0.92,
     "matched_keywords": ["computer", "automatic", "processing"]
   },
-  "candidates": [
-    { "code": "84713000", "description": "...", "confidence": 0.92 },
-    { "code": "84714100", "description": "...", "confidence": 0.45 }
-  ],
   "extracted_keywords": ["laptop", "computer"]
 }
 ```
+
+**含税金预估：**
+```json
+POST /us/classify
+{ "raw_description": "Cotton T-Shirt", "sale_price": 100, "currency": "CNY" }
+```
+```json
+{
+  "hs_code": "61091000",
+  "confidence": 0.91,
+  "duty": {
+    "base_rate": 0.12,
+    "section_301": 0.15,
+    "total_rate": 0.27,
+    "estimated_duty": 3.73,
+    "mpf": 29.66,
+    "total_tax": 33.39,
+    "currency": "USD",
+    "source_currency": "CNY",
+    "exchange_rate": 0.138,
+    "note": "6位HS级估算，仅供参考，实际以CBP核定为准"
+  }
+}
+```
+
+> 美国税金 = 关税（CIF × (MFN + Section 301)）+ 货物处理费（MPF ≥ $29.66）。税率基于中国原产货物，Section 301 附加税根据 USTR 现行公告。
 
 ---
 
