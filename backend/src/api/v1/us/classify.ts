@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { ZodError, z } from "zod";
-import { suggestHsCodes, extractKeywords } from "../../../services/hsCode.service";
+import crypto from "crypto";
+import { suggestHsCodes } from "../../../services/hsCode.service";
 import { lookupHsCode } from "../../../services/hsCode.service";
 import { estimateUsDuty } from "../../../services/dutyRate.service";
 
@@ -16,44 +17,32 @@ const classifySchema = z.object({
 router.post("/us/classify", async (req: Request, res: Response) => {
   try {
     const parsed = classifySchema.parse(req.body);
-    const keywords = extractKeywords(parsed.raw_description);
     const candidates = await suggestHsCodes(parsed.raw_description);
     const best = candidates[0];
+    const taskId = crypto.randomUUID();
 
     const result: any = {
       status: "success",
-      extracted_keywords: keywords,
-      candidates: candidates.slice(0, 5).map(c => ({
-        code: c.code,
-        description: c.description,
-        confidence: c.confidence,
-        matched_keywords: c.matched_keywords || [],
-      })),
-      best_guess: best ? {
-        hs_code: best.code,
-        description: best.description,
-        confidence: best.confidence,
-        matched_keywords: best.matched_keywords || [],
-      } : null,
+      task_id: taskId,
+      mode: parsed.hs_code ? "verify" : "classify",
       suggested_name: parsed.raw_description.substring(0, 80),
+      hs_code: best?.code || null,
+      description: best?.description || null,
+      confidence: best?.confidence || 0,
     };
-
-    // Duty estimate
-    if (parsed.sale_price && best?.code) {
-      try {
-        result.duty = await estimateUsDuty(best.code, parsed.sale_price, parsed.currency);
-      } catch {}
-    }
 
     if (parsed.hs_code) {
       const lookup = lookupHsCode(parsed.hs_code);
-      result.mode = "verify";
       result.provided_hs_code = parsed.hs_code;
       result.hs_code_valid = !!lookup;
       result.suggested_hs_code = best?.code || null;
       result.matched = best?.code === parsed.hs_code.replace(/[.\-\s]/g, "");
-    } else {
-      result.mode = "classify";
+    }
+
+    if (parsed.sale_price && best?.code) {
+      try {
+        result.duty = await estimateUsDuty(best.code, parsed.sale_price, parsed.currency || "CNY");
+      } catch {}
     }
 
     res.json(result);

@@ -418,29 +418,66 @@ POST /us/cleanse/address
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `is_valid` | boolean | 地址是否有效 |
-| `validation_level` | string | 验证精度 |
-| `verdict` | string | 寄递建议（中文） |
-| `english_address` | string | 标准化英文地址 |
-| `zip_match` | boolean | 邮编是否匹配 |
-| `address_type` | string | **地址类型**：`residential`（住宅）/ `commercial`（商业）/ `unknown` |
-| `warnings` | array | 警告列表（PO Box 等） |
+| `status` | string | `"success"` |
+| `task_id` | string | 任务唯一标识 |
+| `mode` | string | `"classify"` / `"verify"` |
+| `suggested_name` | string | 建议品名 |
+| `hs_code` | string\|null | 最匹配的 HS/HTS 编码 |
+| `description` | string\|null | 编码描述 |
+| `confidence` | number | 置信度 0~1 |
+| `duty` | object\|null | **税金预估（仅传入 `sale_price` 时返回）** |
+
+验证模式额外字段（传入 `hs_code` 时）：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `provided_hs_code` | string | 用户提供的编码 |
+| `hs_code_valid` | boolean | 编码是否有效 |
+| `suggested_hs_code` | string\|null | 系统建议的编码 |
+| `matched` | boolean | 是否匹配 |
 
 ### 示例
 
+**基本分类：**
 ```json
-POST /us/cleanse/address
-{ "raw_address": "350 5th Ave, New York, NY", "zipcode": "10118" }
+POST /us/classify
+{ "raw_description": "Laptop Computer" }
 ```
-
 ```json
 {
   "status": "success",
-  "is_valid": true,
-  "validation_level": "PREMISE",
-  "english_address": "350 5th Ave, New York, NY 10118, USA",
-  "zip_match": true,
-  "address_type": "commercial"
+  "task_id": "abc123",
+  "mode": "classify",
+  "suggested_name": "Laptop Computer",
+  "hs_code": "84713000",
+  "description": "Portable automatic data processing machines...",
+  "confidence": 0.92
+}
+```
+
+**含税金预估：**
+```json
+POST /us/classify
+{ "raw_description": "Cotton T-Shirt", "sale_price": 100, "currency": "CNY" }
+```
+```json
+{
+  "status": "success",
+  "task_id": "def456",
+  "mode": "classify",
+  "suggested_name": "Cotton T-Shirt",
+  "hs_code": "61091000",
+  "description": "T-shirts, singlets..., of cotton",
+  "confidence": 0.91,
+  "duty": {
+    "base_rate": 0.12,
+    "section_301": 0.15,
+    "total_rate": 0.27,
+    "estimated_duty": 3.73,
+    "mpf": 29.66,
+    "mpf_note": "MPF is per customs entry: 0.3464% min $29.66 max $575.35 per entry",
+    "total_tax": 3.73
+  }
 }
 ```
 
