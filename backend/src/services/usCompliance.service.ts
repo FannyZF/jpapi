@@ -101,3 +101,17 @@ export function validateUsHscode(code: string): { valid: boolean; description: s
   if (!hs) return { valid: false, description: null };
   return { valid: true, description: hs.description };
 }
+
+export function detectAddressType(
+  dpv: string | null | undefined,
+  cmra: string | null | undefined,
+  rawAddress: string
+): "residential" | "commercial" | "unknown" {
+  // 1. USPS DPV data
+  if (cmra === "Y" || dpv === "D") return "commercial";
+  if (dpv === "Y" || dpv === "S") return "residential";
+  // 2. Text heuristic
+  if (/\b(Inc|LLC|Corp|Ltd|Co\b\.?|PO\s*Box|UPS\s+Store|Mail\s+Boxes|Business\s+Park|Industrial|Warehouse|Factory|Office|Plaza|Tower|Center)\b/i.test(rawAddress)) return "commercial";
+  if (/\b(Apt|Unit\b\.?|#\d+|Suite\b\.?)\b/i.test(rawAddress)) return "residential";
+  return "unknown";
+}

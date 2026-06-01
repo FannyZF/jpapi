@@ -27,6 +27,8 @@ export interface GoogleGeocodingResult {
 export interface GoogleValidationResult {
   validationGranularity: string;
   verdict: string;
+  uspsDpvConfirmation: string | null;
+  uspsDpvCmra: string | null;
 }
 
 async function geocodeSingle(
@@ -94,6 +96,8 @@ async function validateAddress(
       validationGranularity:
         data.result.verdict?.validationGranularity || "UNKNOWN",
       verdict: data.result.verdict?.inputGranularity || "UNKNOWN",
+      uspsDpvConfirmation: data.result.uspsData?.dpvConfirmation || null,
+      uspsDpvCmra: data.result.uspsData?.dpvCmra || null,
     };
   } catch {
     return null;
@@ -104,6 +108,8 @@ export interface GoogleMapsCombinedResult {
   address: AddressResult;
   postalCode: string;
   components: Record<string, string>;
+  uspsDpvConfirmation: string | null;
+  uspsDpvCmra: string | null;
   source?: "cache" | "live";
 }
 
@@ -142,6 +148,8 @@ export async function fetchGoogleMaps(
       },
       postalCode: jaResult?.postalCode || enResult?.postalCode || "",
       components: jaResult?.components || enResult?.components || {},
+      uspsDpvConfirmation: validation?.uspsDpvConfirmation || null,
+      uspsDpvCmra: validation?.uspsDpvCmra || null,
     };
 
     // Only cache high-quality results: SUB_PREMISE, PREMISE, STREET_ADDRESS

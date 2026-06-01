@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { ZodError, z } from "zod";
 import { fetchGoogleMaps } from "../../../services/googleMaps";
-import { checkPOBox } from "../../../services/usCompliance.service";
+import { checkPOBox, detectAddressType } from "../../../services/usCompliance.service";
 
 const router = Router();
 
@@ -29,6 +29,7 @@ router.post("/us/cleanse/address", async (req: Request, res: Response) => {
         japanese_address: parsed.raw_address,
         english_address: parsed.raw_address,
         zip_match: false,
+        address_type: detectAddressType(null, null, parsed.raw_address),
         warnings: [{ level: "warning", message: "Google Maps地址验证失败，请核实地址" }],
       });
       return;
@@ -58,6 +59,7 @@ router.post("/us/cleanse/address", async (req: Request, res: Response) => {
       japanese_address: address.japanese_address,
       english_address: address.english_address,
       zip_match: zipMatch,
+      address_type: detectAddressType(result.uspsDpvConfirmation, result.uspsDpvCmra, parsed.raw_address),
       warnings: warnings.length ? warnings : undefined,
     });
   } catch (err) {
