@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { cacheGet, cacheSet, clearCredentialCache } from "../../services/cache";
 import { DEFAULT_PRICING, DEFAULT_COMPANY } from "../../services/billingStore";
+import { importDutyCsv } from "../../services/dutyRate.service";
 
 const SETTINGS_KEY = "settings:credentials";
 const COMPANY_KEY = "settings:company";
@@ -170,6 +171,16 @@ router.put("/settings/pricing", async (req: Request, res: Response) => {
     res.json({ status: "success", message: "Pricing updated", pricing: merged });
   } catch (err) {
     res.status(500).json({ status: "error", message: "Failed to update pricing" });
+  }
+});
+
+// === Duty Rates ===
+router.put("/settings/duty-rates", async (req: Request, res: Response) => {
+  try {
+    await importDutyCsv();
+    res.json({ status: "success", message: "Duty rates reloaded from CSV" });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: "Failed to reload duty rates", details: String(err) });
   }
 });
 

@@ -2,12 +2,15 @@ import { Router, Request, Response } from "express";
 import { ZodError, z } from "zod";
 import { suggestHsCodes, extractKeywords } from "../../../services/hsCode.service";
 import { lookupHsCode } from "../../../services/hsCode.service";
+import { estimateUsDuty } from "../../../services/dutyRate.service";
 
 const router = Router();
 
 const classifySchema = z.object({
   raw_description: z.string().min(1),
   hs_code: z.string().optional(),
+  sale_price: z.number().positive().optional(),
+  currency: z.string().default("CNY"),
 });
 
 router.post("/us/classify", async (req: Request, res: Response) => {
@@ -34,6 +37,13 @@ router.post("/us/classify", async (req: Request, res: Response) => {
       } : null,
       suggested_name: parsed.raw_description.substring(0, 80),
     };
+
+    // Duty estimate
+    if (parsed.sale_price && best?.code) {
+      try {
+        result.duty = await estimateUsDuty(best.code, parsed.sale_price, parsed.currency);
+      } catch {}
+    }
 
     if (parsed.hs_code) {
       const lookup = lookupHsCode(parsed.hs_code);

@@ -7,6 +7,7 @@ import { classifyConsensus } from "../../services/consensus.service";
 import { deliverWebhook } from "../../services/webhook.service";
 import { createTask } from "../../services/taskManager.service";
 import { updateApiCallTokens } from "../../services/billingStore";
+import { estimateJpDuty } from "../../services/dutyRate.service";
 import type { User } from "../../services/userStore";
 import type { StructuredAttributes } from "../../services/llmClassifier.service";
 
@@ -15,6 +16,8 @@ const router = Router();
 const classifyRequestSchema = z.object({
   raw_description: z.string().min(1, "raw_description is required"),
   hs_code: z.string().optional(),
+  sale_price: z.number().positive().optional(),
+  currency: z.string().default("CNY"),
 });
 
 const batchClassifySchema = z.object({
@@ -98,7 +101,7 @@ router.get("/classify/result/:id", async (req: Request, res: Response) => {
 
 // Reusable classify logic for single + batch
 async function classifyOneProduct(
-  parsed: { raw_description: string; hs_code?: string },
+  parsed: { raw_description: string; hs_code?: string; sale_price?: number; currency?: string },
   user?: User
 ): Promise<any> {
   const { raw_description } = parsed;
@@ -211,6 +214,16 @@ async function classifyOneProduct(
       pendingLLM.set(taskId, output);
     }
   });
+
+  // Add duty estimate if sale_price provided and HS code found
+  if (parsed.sale_price && (result.hs_code || best?.code)) {
+    try {
+      const hs = result.hs_code || best?.code;
+      if (hs) {
+        result.duty = await estimateJpDuty(hs, parsed.sale_price, parsed.currency || "CNY");
+      }
+    } catch { /* ignore duty errors */ }
+  }
 
   return result;
 }

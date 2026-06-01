@@ -8,6 +8,7 @@ import { initHistoryStore } from "./services/historyStore";
 import { ensureUsersTable, createUser, listUsers } from "./services/userStore";
 import { ensureApiCallLogsTable, ensureInvoicesTable } from "./services/billingStore";
 import { ensureHsCodeTable } from "./services/hsCode.service";
+import { ensureDutyRatesTable, importDutyCsv } from "./services/dutyRate.service";
 import { getRedisClient } from "./services/cache";
 import { authMiddleware } from "./core/auth";
 import { signatureMiddleware } from "./core/signature";
@@ -105,6 +106,8 @@ export async function start(): Promise<void> {
   ensureApiCallLogsTable();
   ensureInvoicesTable();
   ensureHsCodeTable();
+  ensureDutyRatesTable();
+  importDutyCsv().catch(() => {});
   logger.info(`SQLite initialized at ${config.SQLITE_PATH}`);
 
   const users = listUsers();
