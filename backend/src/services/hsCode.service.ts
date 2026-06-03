@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs";
 import { getHistoryDb } from "./historyStore";
 import { classifyWithLlm } from "./llmClassifier.service";
+import { classifyWithQwen } from "./qwenClassifier.service";
 
 export interface HsCodeEntry { code: string; section: string; description: string; parent: string; level: number; }
 export interface SuggestionEntry { code: string; description: string; description_cn: string; confidence: number; matched_keywords: string[]; }
@@ -780,7 +781,8 @@ export async function matchDescription(hsCode:string,description:string):Promise
 }
 
 export async function suggestHsCodes(description:string):Promise<SuggestionEntry[]>{
-  const llm=await classifyWithLlm(description);
+  let llm=await classifyWithLlm(description);
+  if(!llm||llm.candidates.length===0) llm=await classifyWithQwen(description);
   if(llm&&llm.candidates.length>0)return llm.candidates.map((c:any)=>({code:c.code,description:c.description,description_cn:c.description_cn||c.description,confidence:c.confidence,matched_keywords:c.matched_keywords||[]}));
   const dk=extractKeywords(description);if(!dk.length)return[];
   const db=getHistoryDb();
