@@ -229,3 +229,15 @@ export function deleteUser(id: string): boolean {
   db.prepare("DELETE FROM users WHERE id = ?").run(id);
   return true;
 }
+
+export function getMonthlyCallCounts(): Record<string, number> {
+  const db = getHistoryDb();
+  const now = new Date();
+  const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const rows = db.prepare(
+    "SELECT user_id, COUNT(*) as cnt FROM api_call_logs WHERE created_at >= ? GROUP BY user_id"
+  ).all(firstOfMonth) as { user_id: string; cnt: number }[];
+  const map: Record<string, number> = {};
+  for (const r of rows) map[r.user_id] = r.cnt;
+  return map;
+}

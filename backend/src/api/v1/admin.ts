@@ -7,6 +7,7 @@ import {
   regenerateApiKey,
   deleteUser,
   getAllPermissions,
+  getMonthlyCallCounts,
 } from "../../services/userStore";
 
 const router = Router();
@@ -14,6 +15,7 @@ const router = Router();
 router.get("/users", (_req: Request, res: Response) => {
   try {
     const users = listUsers();
+    const counts = getMonthlyCallCounts();
     const safeUsers = users.map((u) => ({
       id: u.id,
       name: u.name,
@@ -28,6 +30,7 @@ router.get("/users", (_req: Request, res: Response) => {
       contact_email: u.contact_email,
       contact_phone: u.contact_phone,
       countries: u.countries,
+      monthly_calls: counts[u.id] || 0,
     }));
     res.json({ status: "success", users: safeUsers });
   } catch (err) {

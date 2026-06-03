@@ -19,6 +19,7 @@
             <th class="text-left px-4 py-3">Company</th>
             <th class="text-left px-4 py-3">API Key</th>
             <th class="text-left px-4 py-3">Permissions</th>
+            <th class="text-left px-4 py-3">Monthly Calls</th>
             <th class="text-left px-4 py-3">Status</th>
             <th class="text-left px-4 py-3">Created</th>
             <th class="text-left px-4 py-3">Last Used</th>
@@ -28,7 +29,7 @@
         </thead>
         <tbody>
           <tr v-if="users.length === 0">
-            <td colspan="7" class="px-4 py-8 text-center text-gray-400">No users</td>
+            <td colspan="8" class="px-4 py-8 text-center text-gray-400">No users</td>
           </tr>
           <tr v-for="u in users" :key="u.id" class="border-b hover:bg-gray-50">
             <td class="px-4 py-3 font-medium">{{ u.name }}</td>
@@ -43,6 +44,9 @@
                 >{{ p }}</span>
                 <span v-if="u.permissions.length === 0" class="text-gray-400 text-xs">none</span>
               </div>
+            </td>
+            <td class="px-4 py-3 text-center">
+              <span class="font-mono font-bold text-sm">{{ u.monthly_calls || 0 }}</span>
             </td>
             <td class="px-4 py-3">
               <span :class="u.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="px-2 py-0.5 rounded text-xs">
@@ -228,6 +232,7 @@ interface UserRow {
   contact_email: string | null;
   contact_phone: string | null;
   countries: string[];
+  monthly_calls: number;
 }
 
 const users = ref<UserRow[]>([]);
