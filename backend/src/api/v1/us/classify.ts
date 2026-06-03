@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { ZodError, z } from "zod";
 import crypto from "crypto";
-import { suggestHsCodes } from "../../../services/hsCode.service";
+import { suggestHsCodes, extractKeywords } from "../../../services/hsCode.service";
 import { lookupHsCode } from "../../../services/hsCode.service";
 import { estimateUsDuty } from "../../../services/dutyRate.service";
 import { logger } from "../../../core/logger";
@@ -29,9 +29,21 @@ router.post("/us/classify", async (req: Request, res: Response) => {
       task_id: taskId,
       mode: parsed.hs_code ? "verify" : "classify",
       suggested_name: parsed.raw_description.substring(0, 80),
-      hs_code: best?.code || null,
-      description: best?.description || null,
-      confidence: best?.confidence || 0,
+      extracted_keywords: extractKeywords(parsed.raw_description),
+      candidates: candidates.map(c => ({
+        code: c.code,
+        description: c.description,
+        description_cn: c.description_cn || "",
+        confidence: c.confidence,
+        matched_keywords: c.matched_keywords || [],
+      })),
+      best_guess: best ? {
+        hs_code: best.code,
+        description: best.description,
+        description_cn: best.description_cn || "",
+        confidence: best.confidence,
+        matched_keywords: best.matched_keywords || [],
+      } : null,
     };
 
     if (parsed.hs_code) {
