@@ -3,6 +3,7 @@ import fs from "fs";
 import { getHistoryDb } from "./historyStore";
 import { classifyWithLlm } from "./llmClassifier.service";
 import { classifyWithQwen } from "./qwenClassifier.service";
+import { logger } from "../core/logger";
 
 export interface HsCodeEntry { code: string; section: string; description: string; parent: string; level: number; }
 export interface SuggestionEntry { code: string; description: string; description_cn: string; confidence: number; matched_keywords: string[]; }
@@ -782,15 +783,26 @@ export async function matchDescription(hsCode:string,description:string):Promise
 
 export async function suggestHsCodes(description:string):Promise<SuggestionEntry[]>{
   let llm=await classifyWithLlm(description);
-  if(!llm||llm.candidates.length===0) llm=await classifyWithQwen(description);
-  if(llm&&llm.candidates.length>0)return llm.candidates.map((c:any)=>({code:c.code,description:c.description,description_cn:c.description_cn||c.description,confidence:c.confidence,matched_keywords:c.matched_keywords||[]}));
-  const dk=extractKeywords(description);if(!dk.length)return[];
+  if(!llm||llm.candidates.length===0){
+    logger.warn({description},"[suggestHsCodes] DeepSeek returned no candidates, trying Qwen");
+    llm=await classifyWithQwen(description);
+  }
+  if(llm&&llm.candidates.length>0){
+    logger.info({count:llm.candidates.length,top:llm.candidates[0]?.code},"[suggestHsCodes] LLM returned candidates");
+    return llm.candidates.map((c:any)=>({code:c.code,description:c.description,description_cn:c.description_cn||c.description,confidence:c.confidence,matched_keywords:c.matched_keywords||[]}));
+  }
+  logger.warn({description},"[suggestHsCodes] All LLMs failed, falling back to keyword matching");
+  const dk=extractKeywords(description);
+  logger.info({keywords:dk,count:dk.length},"[suggestHsCodes] Extracted keywords");
+  if(!dk.length)return[];
   const db=getHistoryDb();
   const ar=db.prepare("SELECT code,description FROM hs_codes WHERE level>=4 ORDER BY code").all() as HsCodeEntry[];
+  logger.info({hsCodesCount:ar.length},"[suggestHsCodes] HS codes in DB");
   const sc:{code:string;description:string;score:number}[]=[];
   for(const r of ar){const s=scoreMatch(dk,extractHsKeywords(r.description));if(s>0)sc.push({code:r.code,description:r.description,score:s});}
   sc.sort((a,b)=>b.score-a.score);
   const top=sc.slice(0,10);
+  logger.info({candidates:top.length,description},"[suggestHsCodes] Keyword matching results");
   const maxScore=top.length>0?top[0].score:1;
   return top.map(s=>({code:s.code,description:s.description,description_cn:"",confidence:maxScore>0?Math.round(Math.min(s.score/Math.max(dk.length,1),1)*100)/100:0,matched_keywords:computeMatchedKeywords(dk,s.description)}));
 }

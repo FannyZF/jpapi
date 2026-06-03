@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { suggestHsCodes } from "../../../services/hsCode.service";
 import { lookupHsCode } from "../../../services/hsCode.service";
 import { estimateUsDuty } from "../../../services/dutyRate.service";
+import { logger } from "../../../core/logger";
 
 const router = Router();
 
@@ -17,7 +18,9 @@ const classifySchema = z.object({
 router.post("/us/classify", async (req: Request, res: Response) => {
   try {
     const parsed = classifySchema.parse(req.body);
+    logger.info({description:parsed.raw_description},"[US classify] Request received");
     const candidates = await suggestHsCodes(parsed.raw_description);
+    logger.info({candidates:candidates.length,top:candidates[0]?.code},"[US classify] suggestHsCodes result");
     const best = candidates[0];
     const taskId = crypto.randomUUID();
 
