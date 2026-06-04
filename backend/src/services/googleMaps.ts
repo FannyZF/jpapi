@@ -119,7 +119,10 @@ export async function fetchGoogleMaps(
 ): Promise<GoogleMapsCombinedResult | null> {
   const cacheKey = addressCacheKey(rawAddress, providedZipcode);
   const cached = await cacheGet<GoogleMapsCombinedResult>(cacheKey);
-  if (cached) return { ...cached, source: "cache" };
+  if (cached) {
+    cached.address.japanese_address = stripJapaneseGooglePrefix(cached.address.japanese_address);
+    return { ...cached, source: "cache" };
+  }
 
   try {
     const [jaResult, enResult, validation] = await Promise.all([
@@ -143,7 +146,7 @@ export async function fetchGoogleMaps(
         validation_level: validationLevel,
         verdict_level: "",
         verdict_message: "",
-        japanese_address: jaResult?.formattedAddress || rawAddress,
+        japanese_address: stripJapaneseGooglePrefix(jaResult?.formattedAddress || rawAddress),
         english_address: enResult?.formattedAddress || rawAddress,
       },
       postalCode: jaResult?.postalCode || enResult?.postalCode || "",
@@ -161,4 +164,8 @@ export async function fetchGoogleMaps(
   } catch {
     return null;
   }
+}
+
+function stripJapaneseGooglePrefix(address: string): string {
+  return address.replace(/^(日本[、,\s]*)?〒\d{3}-?\d{4}\s+/, "").trim();
 }
