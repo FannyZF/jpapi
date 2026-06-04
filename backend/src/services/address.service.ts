@@ -3,6 +3,7 @@ import { fetchGoogleMaps } from "./googleMaps";
 import { getCredential } from "./cache";
 import { formatZipcode } from "../utils/textCleaner";
 import type { AddressCleanseResponse } from "../schemas/address";
+import { logger } from "../core/logger";
 
 type Source = "live" | "cache" | "fallback";
 type AddressServiceResult = AddressCleanseResponse["data"] & { source: Source; components: Record<string, string> };
@@ -75,6 +76,7 @@ export async function cleanseAddress(
 
   // Extract room number, validate base address first
   const { base: baseAddress, room } = extractRoomNumber(rawAddress);
+  logger.info({rawAddress, baseAddress, room, orderId},"[address] extracted room");
 
   const zipResult = await fetchZipCloud(providedZipcode);
   const zipValid = zipResult !== null;
@@ -146,6 +148,7 @@ export async function cleanseAddress(
   if (lowPrecision && zipResult) {
     const zipBase = [zipResult.prefecture, zipResult.city, zipResult.full_address].join("");
     const streetDetail = extractStreetDetail(baseAddress, zipBase);
+    logger.info({zipBase, streetDetail, baseAddress},"[address] merging street detail");
     if (streetDetail) {
       finalJa = zipBase + streetDetail;
       finalEn = zipBase + streetDetail;
@@ -153,9 +156,12 @@ export async function cleanseAddress(
   }
 
   if (isAddressValid && room) {
+    logger.info({finalJa, room},"[address] reattaching room");
     finalJa = `${finalJa} ${room}`;
     finalEn = `${finalEn} ${room}`;
   }
+
+  logger.info({finalJa, validationLevel, isAddressValid},"[address] final result");
 
   // Verdict for shipment readiness
   const verdictMap: Record<string, { level: string; message: string }> = {
