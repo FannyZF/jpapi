@@ -33,6 +33,16 @@ function isPlaceholderKey(key: string): boolean {
   return !key || key.startsWith("placeholder") || key.length < 20;
 }
 
+function extractStreetDetail(baseAddress: string, zipAddress: string): string {
+  const norm = (s: string) => s.replace(/\s/g, "").replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+  const normBase = norm(baseAddress);
+  const normZip = norm(zipAddress);
+  if (normBase.startsWith(normZip)) {
+    return normBase.substring(normZip.length);
+  }
+  return "";
+}
+
 // Extract room/apartment number to strip before validation, reattach after
 function extractRoomNumber(address: string): { base: string; room: string } {
   const roomPatterns = [
@@ -126,8 +136,26 @@ export async function cleanseAddress(
   // Reattach room number to validated result
   const jaAddress = googleResult?.address.japanese_address ?? (isAddressValid ? baseAddress : rawAddress);
   const enAddress = googleResult?.address.english_address ?? (isAddressValid ? baseAddress : rawAddress);
-  const finalJa = isAddressValid && room ? `${jaAddress} ${room}` : jaAddress;
-  const finalEn = isAddressValid && room ? `${enAddress} ${room}` : enAddress;
+
+  // If Google only returned low-precision result, merge ZipCloud validated base
+  // with original street-level detail (banchi/go) from user input
+  const lowPrecision = ["LOCALITY", "ROUTE", "NEIGHBORHOOD", "OTHER", "UNKNOWN"].includes(validationLevel);
+  let finalJa = jaAddress;
+  let finalEn = enAddress;
+
+  if (lowPrecision && zipResult) {
+    const zipBase = [zipResult.prefecture, zipResult.city, zipResult.full_address].join("");
+    const streetDetail = extractStreetDetail(baseAddress, zipBase);
+    if (streetDetail) {
+      finalJa = zipBase + streetDetail;
+      finalEn = zipBase + streetDetail;
+    }
+  }
+
+  if (isAddressValid && room) {
+    finalJa = `${finalJa} ${room}`;
+    finalEn = `${finalEn} ${room}`;
+  }
 
   // Verdict for shipment readiness
   const verdictMap: Record<string, { level: string; message: string }> = {
