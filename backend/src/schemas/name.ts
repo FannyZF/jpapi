@@ -8,6 +8,7 @@ export const nameCleanseRequestSchema = z.object({
 export const nameResultSchema = z.object({
   original: z.string(),
   japanese_katakana: z.string(),
+  japanese_kanji: z.string().nullable(),
   english_romaji: z.string(),
 });
 
