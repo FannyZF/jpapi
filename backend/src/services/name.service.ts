@@ -5,9 +5,9 @@ import {
   toKatakanaWrapper,
 } from "./localNlp";
 import { isPureEnglish } from "../utils/textCleaner";
-import { cacheGet, cacheSet } from "./cache";
-import { getCredential } from "./cache";
+import { cacheGet, cacheSet, getCredential } from "./cache";
 import axios from "axios";
+import { config } from "../core/config";
 import type { NameCleanseResponse } from "../schemas/name";
 
 type Source = "live" | "cache" | "fallback";
@@ -27,7 +27,7 @@ async function convertRomajiToKanji(romaji: string): Promise<string | null> {
     const response = await axios.post(
       "https://api.deepseek.com/v1/chat/completions",
       {
-        model: "deepseek-chat",
+        model: config.DEEPSEEK_MODEL,
         messages: [
           { role: "system", content: "You are a Japanese name converter. Convert the given Romaji name to the most common Japanese Kanji name. Output ONLY the Kanji name with spaces between family and given name, nothing else. No explanation, no markdown." },
           { role: "user", content: romaji },

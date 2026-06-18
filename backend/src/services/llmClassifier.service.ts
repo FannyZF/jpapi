@@ -3,7 +3,7 @@ import { getCredential } from "./cache";
 import { config } from "../core/config";
 
 const API_BASE = "https://api.deepseek.com/v1";
-const DEFAULT_MODEL = "deepseek-chat";
+const DEFAULT_MODEL = "deepseek-v4-flash";
 
 export interface LlmCandidate {
   code: string;

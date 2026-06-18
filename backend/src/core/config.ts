@@ -16,7 +16,7 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
   DEEPSEEK_API_KEY: z.string().optional(),
-  DEEPSEEK_MODEL: z.string().default("deepseek-chat"),
+  DEEPSEEK_MODEL: z.string().default("deepseek-v4-flash"),
   QWEN_API_KEY: z.string().optional(),
   QWEN_MODEL: z.string().default("qwen-plus"),
   HUNYUAN_API_KEY: z.string().optional(),
