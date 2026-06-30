@@ -57,6 +57,20 @@ router.get("/settings", async (_req: Request, res: Response) => {
         optional: true,
         description: "QWen 3.6 Plus LLM for dual-model consensus",
       },
+      {
+        key: "JAPANPOST_CLIENT_ID",
+        configured: !!(stored?.JAPANPOST_CLIENT_ID || process.env.JAPANPOST_CLIENT_ID),
+        masked: maskValue(stored?.JAPANPOST_CLIENT_ID || process.env.JAPANPOST_CLIENT_ID || ""),
+        optional: true,
+        description: "Japan Post API OAuth2 Client ID (address validation)",
+      },
+      {
+        key: "JAPANPOST_CLIENT_SECRET",
+        configured: !!(stored?.JAPANPOST_CLIENT_SECRET || process.env.JAPANPOST_CLIENT_SECRET),
+        masked: maskValue(stored?.JAPANPOST_CLIENT_SECRET || process.env.JAPANPOST_CLIENT_SECRET || ""),
+        optional: true,
+        description: "Japan Post API OAuth2 Client Secret",
+      },
     ];
 
     res.json({ status: "success", credentials });
@@ -77,7 +91,7 @@ router.put("/settings", async (req: Request, res: Response) => {
       return;
     }
 
-    const validKeys = ["GOOGLE_MAPS_API_KEY", "YAHOO_CLIENT_ID", "REDIS_URL", "DEEPSEEK_API_KEY", "QWEN_API_KEY"];
+    const validKeys = ["GOOGLE_MAPS_API_KEY", "YAHOO_CLIENT_ID", "REDIS_URL", "DEEPSEEK_API_KEY", "QWEN_API_KEY", "JAPANPOST_CLIENT_ID", "JAPANPOST_CLIENT_SECRET"];
     const updates: Record<string, string> = {};
 
     for (const key of validKeys) {
