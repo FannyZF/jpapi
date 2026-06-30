@@ -7,6 +7,7 @@ export default {
     dashboard: "Dashboard",
     compliance: "Compliance",
     address: "Address Cleanse",
+    japanPost: "Japan Post",
     billing: "Billing",
     cache: "Cache Manager",
     apilogs: "API Logs",

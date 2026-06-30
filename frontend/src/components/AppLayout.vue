@@ -14,6 +14,9 @@
         <router-link to="/address-upload" class="block px-3 py-2 rounded hover:bg-slate-700 transition-colors" active-class="bg-slate-700">
           {{ $t('nav.address') }}
         </router-link>
+        <router-link to="/japan-post" class="block px-3 py-2 rounded hover:bg-slate-700 transition-colors" active-class="bg-slate-700">
+          {{ $t('nav.japanPost') }}
+        </router-link>
         <router-link to="/billing" class="block px-3 py-2 rounded hover:bg-slate-700 transition-colors" active-class="bg-slate-700">
           {{ $t('nav.billing') }}
         </router-link>

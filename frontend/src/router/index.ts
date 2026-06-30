@@ -7,6 +7,7 @@ import UserManager from "../views/UserManager.vue";
 import Billing from "../views/Billing.vue";
 import ComplianceCheck from "../views/ComplianceCheck.vue";
 import AddressUpload from "../views/AddressUpload.vue";
+import JapanPost from "../views/JapanPost.vue";
 import ApiLogs from "../views/ApiLogs.vue";
 import Login from "../views/Login.vue";
 
@@ -19,6 +20,7 @@ const routes = [
   { path: "/billing", name: "Billing", component: Billing },
   { path: "/compliance", name: "ComplianceCheck", component: ComplianceCheck },
   { path: "/address-upload", name: "AddressUpload", component: AddressUpload },
+  { path: "/japan-post", name: "JapanPost", component: JapanPost },
   { path: "/apilogs", name: "ApiLogs", component: ApiLogs },
 ];
 

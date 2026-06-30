@@ -7,6 +7,7 @@ export default {
     dashboard: "仪表盘",
     compliance: "合规检查",
     address: "地址批量清洗",
+    japanPost: "日本邮政校验",
     billing: "账单管理",
     cache: "缓存管理",
     apilogs: "API 日志",

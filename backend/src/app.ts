@@ -30,6 +30,7 @@ import classifyRouter from "./api/v1/classify";
 import webhookReceiverRouter from "./api/v1/webhookReceiver";
 import healthRouter from "./api/v1/health";
 import usRouter from "./api/v1/us";
+import japanPostRouter from "./api/v1/japanPost";
 
 export let redisAvailable = false;
 
@@ -81,6 +82,9 @@ app.use("/api/v1/jp/cleanse", itemCleanseRouter);
 
 // US routes
 app.use("/api/v1", usRouter);
+
+// Japan Post validation
+app.use("/api/v1", japanPostRouter);
 
 app.use("/api/v1", cacheRouter);
 
